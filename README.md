@@ -8,19 +8,21 @@
 
 ## 🌟 在线使用
 
-- 🌐 **官方网站**: [https://water.katelya.eu.org/](https://water.katelya.eu.org/)
-- 🚀 **GitHub Pages**: [https://katelya77.github.io/watercracker/](https://katelya77.github.io/watercracker/)
-- 📖 **使用指南**: 参考 [FAQ.md](FAQ.md)
+- 🌐 官方网站: <https://water.katelya.eu.org/>
+- 🚀 GitHub Pages: <https://katelya77.github.io/watercracker/>
+- 📖 使用指南: 参考 [FAQ.md](FAQ.md)
 
 ## ✨ 特性介绍
 
 ### 🎨 现代化UI设计
+
 - 💎 渐变紫蓝色背景效果
 - 🪟 玻璃磨砂质感卡片设计
 - ✨ 流畅的按钮动画和悬停效果
 - 📱 完美的响应式布局
 
 ### 🔧 核心功能
+
 - 🌐 **完全离线使用** - 无需互联网连接
 - 🔓 **开放自由** - 完全脱离"微信"控制
 - ⚡ **极速响应** - 蓝牙直连，毫秒级响应
@@ -31,9 +33,11 @@
 ## 🚀 快速开始
 
 ### 方法1: 在线使用（推荐）
-直接访问 [https://water.katelya.eu.org/](https://water.katelya.eu.org/)
+
+直接访问 <https://water.katelya.eu.org/>
 
 ### 方法2: 本地运行
+
 ```bash
 # 克隆仓库
 git clone https://github.com/katelya77/watercracker.git
@@ -57,6 +61,7 @@ npm run build
 4. **开始使用** - 点击"结束"停止
 
 ### 浏览器要求
+
 - ✅ Chrome 88+ / Edge 88+
 - ✅ Opera / Vivaldi
 - ✅ 使用HTTPS协议（或localhost）
@@ -72,7 +77,7 @@ npm run build
 
 ## 📂 项目结构
 
-```
+```text
 watercracker/
 ├── src/
 │   ├── index.ts          # 主入口文件

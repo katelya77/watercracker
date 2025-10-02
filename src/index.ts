@@ -25,15 +25,18 @@ function checkBluetoothStatus() {
   }
 }
 
-// 完全移除CSDN和浏览器检测，直接显示主界面
-(document.querySelector(".supported") as HTMLElement).style.display = "block";
-(document.querySelector(".unsupported") as HTMLElement).style.display = "none";
-(document.querySelector(".csdn-warning") as HTMLElement).style.display = "none";
-
-// 检查并显示蓝牙状态
-setTimeout(checkBluetoothStatus, 100);
-
+// 完全移除所有检测，直接显示主界面
 document.addEventListener("DOMContentLoaded", () => {
+  // 确保主界面显示
+  const mainEl = document.querySelector(".supported") as HTMLElement;
+  if (mainEl) {
+    mainEl.style.display = "block";
+  }
+  
+  // 检查蓝牙状态
+  setTimeout(checkBluetoothStatus, 100);
+  
+  // 绑定按钮事件
   const mainButton = document.getElementById("main-button") as HTMLButtonElement;
   mainButton.addEventListener("click", handleButtonClick);
 });
