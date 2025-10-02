@@ -4,15 +4,10 @@
 
 ![waterctl](waterctl.jpg)
 
-## 限时活动：waterctl KOTH Challenge
-
-https://github.com/celesWuff/waterctl/issues/41
-
 ## 🏃 使用
 
-- 🌎 开始使用： https://celeswuff.github.io/waterctl/
-- 不能用？请先看看”疑难解答“： https://github.com/celesWuff/waterctl/blob/2.x/FAQ.md
-
+- 🌎 开始使用： https://github.com/katelya77/watercracker
+- 不能用？请先看看”疑难解答“： https://github.com/katelya77/watercracker/blob/main/FAQ.md
 ## ✨ 特性
 
 - 🌐 真正离线使用，不依赖互联网连接（你可以在离线状态下打开本应用的链接）
