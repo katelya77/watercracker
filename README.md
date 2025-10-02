@@ -7,7 +7,8 @@
 ## 🚀 快速开始
 
 - 🌎 **在线体验**: <https://katelya77.github.io/watercracker>
-- 💡 **疑难解答**: [FAQ.md](https://github.com/katelya77/watercracker/blob/main/FAQ.md)
+- � **强制显示**: <https://katelya77.github.io/watercracker?force=true> (如果遇到兼容性问题)
+- �💡 **疑难解答**: [FAQ.md](https://github.com/katelya77/watercracker/blob/main/FAQ.md)
 - 🔧 **源代码**: [GitHub Repository](https://github.com/katelya77/watercracker)
 
 ## ✨ 全新特性
