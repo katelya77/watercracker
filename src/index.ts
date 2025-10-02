@@ -1,4 +1,3 @@
-import "water.css/out/light.min.css";
 import "./styles.css";
 import "./writeValueLogging";
 import { handleButtonClick } from "./bluetooth";

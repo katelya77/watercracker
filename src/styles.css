@@ -6,11 +6,14 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  min-height: 100vh;
-  overflow: hidden;
-  position: relative;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  min-height: 100vh !important;
+  overflow: hidden !important;
+  position: relative !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  margin: 0 !important;
+  padding: 0 !important;
 }
 
 /* 动态背景 */
@@ -31,20 +34,21 @@ body::before {
 
 /* 粒子背景 */
 .particles {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  z-index: -1;
-  overflow: hidden;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  z-index: -1 !important;
+  overflow: hidden !important;
+  pointer-events: none !important;
 }
 
 .particle {
-  position: absolute;
-  background: rgba(255, 255, 255, 0.1);
-  border-radius: 50%;
-  animation: particle-float 15s infinite linear;
+  position: absolute !important;
+  background: rgba(255, 255, 255, 0.3) !important;
+  border-radius: 50% !important;
+  animation: particle-float 15s infinite linear !important;
 }
 
 .particle:nth-child(1) { width: 4px; height: 4px; left: 10%; animation-delay: 0s; }
@@ -72,24 +76,24 @@ body::before {
 
 /* 主容器 */
 .main {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  padding: 40px;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  flex-direction: column !important;
+  padding: 40px !important;
+  border-radius: 20px !important;
+  background: rgba(255, 255, 255, 0.1) !important;
+  backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
   box-shadow: 
     0 25px 45px rgba(0, 0, 0, 0.1),
-    0 0 80px rgba(255, 255, 255, 0.1);
-  animation: glass-glow 3s ease-in-out infinite alternate;
-  min-width: 320px;
-  text-align: center;
+    0 0 80px rgba(255, 255, 255, 0.1) !important;
+  animation: glass-glow 3s ease-in-out infinite alternate !important;
+  min-width: 320px !important;
+  text-align: center !important;
 }
 
 /* 状态指示器 */
@@ -154,20 +158,21 @@ body::before {
 
 /* 主按钮 */
 #main-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  border-radius: 50px;
-  padding: 16px 48px;
-  font-size: 18px;
-  font-weight: 600;
-  color: white;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
-  text-transform: uppercase;
-  letter-spacing: 1px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  border: none !important;
+  border-radius: 50px !important;
+  padding: 16px 48px !important;
+  font-size: 18px !important;
+  font-weight: 600 !important;
+  color: white !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  position: relative !important;
+  overflow: hidden !important;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  outline: none !important;
 }
 
 #main-button::before {
@@ -212,6 +217,10 @@ body::before {
 /* 不支持的浏览器样式 */
 .unsupported {
   display: none;
+}
+
+.csdn-warning {
+  display: none !important;
 }
 
 .unsupported h3 {
