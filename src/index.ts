@@ -14,32 +14,63 @@ Sentry.init({
 // 检测蓝牙支持并显示状态
 function checkBluetoothStatus() {
   const statusEl = document.getElementById("bluetooth-status");
-  if (!statusEl) return;
+  if (!statusEl) {
+    console.log("未找到蓝牙状态元素");
+    return;
+  }
 
-  if (navigator.bluetooth) {
-    statusEl.innerHTML = "✅ 浏览器支持蓝牙功能";
-    statusEl.style.color = "rgba(144, 238, 144, 0.9)";
-  } else {
-    statusEl.innerHTML = "⚠️ 浏览器不支持蓝牙，功能可能受限";
+  console.log("开始检测蓝牙支持...");
+  
+  try {
+    if (navigator.bluetooth) {
+      statusEl.innerHTML = "✅ 浏览器支持蓝牙功能";
+      statusEl.style.color = "rgba(144, 238, 144, 0.9)";
+      console.log("蓝牙支持检测完成：支持");
+    } else {
+      statusEl.innerHTML = "⚠️ 浏览器不支持蓝牙，功能可能受限";
+      statusEl.style.color = "rgba(255, 182, 193, 0.9)";
+      console.log("蓝牙支持检测完成：不支持");
+    }
+  } catch (error) {
+    statusEl.innerHTML = "❌ 蓝牙检测出错";
     statusEl.style.color = "rgba(255, 182, 193, 0.9)";
+    console.error("蓝牙检测错误:", error);
   }
 }
 
-// 完全移除所有检测，直接显示主界面
-document.addEventListener("DOMContentLoaded", () => {
+// 初始化函数
+function initialize() {
+  console.log("开始初始化应用...");
+  
   // 确保主界面显示
   const mainEl = document.querySelector(".supported") as HTMLElement;
   if (mainEl) {
     mainEl.style.display = "block";
+    console.log("主界面已显示");
   }
   
   // 检查蓝牙状态
-  setTimeout(checkBluetoothStatus, 100);
+  checkBluetoothStatus();
   
   // 绑定按钮事件
   const mainButton = document.getElementById("main-button") as HTMLButtonElement;
-  mainButton.addEventListener("click", handleButtonClick);
-});
+  if (mainButton) {
+    mainButton.addEventListener("click", handleButtonClick);
+    console.log("按钮事件已绑定");
+  }
+  
+  console.log("应用初始化完成");
+}
+
+// 多种方式确保初始化执行
+if (document.readyState === "loading") {
+  document.addEventListener("DOMContentLoaded", initialize);
+} else {
+  initialize();
+}
+
+// 备用初始化
+setTimeout(initialize, 100);
 
 // PWA
 registerServiceWorker();
