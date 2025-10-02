@@ -3,12 +3,14 @@ import { clearLogs, getLogs, isLogEmpty, log } from "./logger";
 import { endEpilogue, baAck, offlinebombFix, startPrologue, endPrologue } from "./payloads";
 import { makeStartEpilogue, makeUnlockResponse } from "./solvers";
 import { bufferToHexString } from "./utils";
+import { ProtocolAdapter } from "./protocolAdapter";
 
 let bluetoothDevice: BluetoothDevice;
 let txdCharacteristic: BluetoothRemoteGATTCharacteristic;
 let rxdCharacteristic: BluetoothRemoteGATTCharacteristic;
 
 let isStarted = false;
+let protocolAdapter: ProtocolAdapter; // 新的协议适配器
 
 let pendingStartEpilogue: number; // workaround for determining new firmware, see handleRxdNotifications
 let pendingTimeoutMessage: number; // if we don't get a response in time, we should show an error message
@@ -43,6 +45,12 @@ async function disconnect() {
   clearLogs();
   clearTimeout(pendingStartEpilogue);
   clearTimeout(pendingTimeoutMessage);
+  
+  // 🔥 重置协议适配器
+  if (protocolAdapter) {
+    protocolAdapter.reset();
+  }
+  
   updateUi("standby");
 }
 
@@ -111,6 +119,14 @@ async function handleRxdNotifications(event: Event) {
     // ... and sometimes it sends a single byte 0xFD
     if (payload.length < 4) {
       return;
+    }
+
+    // 🔥 新增: 尝试使用协议适配器处理新版固件
+    if (protocolAdapter) {
+      const handled = await protocolAdapter.handlePacket(payload, txdCharacteristic);
+      if (handled) {
+        return; // 如果适配器处理了，就不继续执行原有逻辑
+      }
     }
 
     const dType = payload[3];
@@ -199,6 +215,10 @@ async function start() {
     const service = await server.getPrimaryService(0xf1f0);
     txdCharacteristic = await service.getCharacteristic(0xf1f1);
     rxdCharacteristic = await service.getCharacteristic(0xf1f2);
+
+    // 🔥 初始化协议适配器
+    protocolAdapter = new ProtocolAdapter();
+    log("协议适配器已初始化，支持新版固件适配");
 
     await rxdCharacteristic.startNotifications();
     rxdCharacteristic.addEventListener("characteristicvaluechanged", handleRxdNotifications);
