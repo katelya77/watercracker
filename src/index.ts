@@ -6,7 +6,38 @@ import { ParticleSystem } from "./particles";
 
 (document.getElementById("version") as HTMLSpanElement).innerText = " · v" + VERSION;
 
-if (!navigator.bluetooth) {
+// 改进的蓝牙支持检测
+function checkBluetoothSupport() {
+  // 检查是否在HTTPS环境或本地开发环境
+  const isSecureContext = window.isSecureContext || 
+                         location.protocol === 'https:' || 
+                         location.hostname === 'localhost' ||
+                         location.hostname === '127.0.0.1';
+  
+  // 检查浏览器是否支持蓝牙API
+  const hasBluetoothAPI = 'bluetooth' in navigator && typeof navigator.bluetooth !== 'undefined';
+  
+  // 检查是否是支持的浏览器
+  const userAgent = navigator.userAgent.toLowerCase();
+  const isSupportedBrowser = 
+    (userAgent.includes('chrome') && !userAgent.includes('edg')) || // Chrome但不是Edge
+    userAgent.includes('edg') || // Edge
+    userAgent.includes('opera') ||
+    userAgent.includes('opr'); // Opera
+
+  console.log('蓝牙支持检测:', {
+    isSecureContext,
+    hasBluetoothAPI,
+    isSupportedBrowser,
+    userAgent: navigator.userAgent,
+    protocol: location.protocol,
+    hostname: location.hostname
+  });
+
+  return isSecureContext && hasBluetoothAPI && isSupportedBrowser;
+}
+
+if (!checkBluetoothSupport()) {
   (document.querySelector(".supported") as HTMLElement).style.display = "none";
   (document.querySelector(".unsupported") as HTMLElement).style.display = "block";
 }

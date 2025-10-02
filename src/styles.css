@@ -6,14 +6,15 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  min-height: 100vh !important;
-  overflow: hidden !important;
-  position: relative !important;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  color: white !important;
-  margin: 0 !important;
-  padding: 0 !important;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  min-height: 100vh;
+  overflow: hidden;
+  position: relative;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-attachment: fixed;
+  color: white;
+  margin: 0;
+  padding: 0;
 }
 
 /* 动态背景 */
@@ -25,30 +26,36 @@ body::before {
   width: 100%;
   height: 100%;
   background: 
+    -webkit-radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
+    -webkit-radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
+    -webkit-radial-gradient(circle at 40% 80%, rgba(120, 200, 255, 0.3) 0%, transparent 50%);
+  background: 
     radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
     radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
     radial-gradient(circle at 40% 80%, rgba(120, 200, 255, 0.3) 0%, transparent 50%);
+  -webkit-animation: float 6s ease-in-out infinite;
   animation: float 6s ease-in-out infinite;
   z-index: -2;
 }
 
 /* 粒子背景 */
 .particles {
-  position: fixed !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  z-index: -1 !important;
-  overflow: hidden !important;
-  pointer-events: none !important;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  overflow: hidden;
+  pointer-events: none;
 }
 
 .particle {
-  position: absolute !important;
-  background: rgba(255, 255, 255, 0.3) !important;
-  border-radius: 50% !important;
-  animation: particle-float 15s infinite linear !important;
+  position: absolute;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 50%;
+  animation: particle-float 15s infinite linear;
+  will-change: transform;
 }
 
 .particle:nth-child(1) { width: 4px; height: 4px; left: 10%; animation-delay: 0s; }
@@ -62,38 +69,56 @@ body::before {
 .particle:nth-child(9) { width: 4px; height: 4px; left: 90%; animation-delay: 16s; }
 
 @keyframes particle-float {
-  0% { transform: translateY(100vh) rotate(0deg); opacity: 0; }
-  10% { opacity: 1; }
-  90% { opacity: 1; }
-  100% { transform: translateY(-100px) rotate(360deg); opacity: 0; }
+  0% { 
+    transform: translate3d(0, 100vh, 0) rotate(0deg); 
+    opacity: 0; 
+  }
+  10% { 
+    opacity: 1; 
+  }
+  90% { 
+    opacity: 1; 
+  }
+  100% { 
+    transform: translate3d(0, -100px, 0) rotate(360deg); 
+    opacity: 0; 
+  }
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px) rotate(0deg); }
-  33% { transform: translateY(-10px) rotate(0.5deg); }
-  66% { transform: translateY(-5px) rotate(-0.5deg); }
+  0%, 100% { 
+    transform: translate3d(0, 0, 0) rotate(0deg); 
+  }
+  33% { 
+    transform: translate3d(0, -10px, 0) rotate(0.5deg); 
+  }
+  66% { 
+    transform: translate3d(0, -5px, 0) rotate(-0.5deg); 
+  }
 }
 
 /* 主容器 */
 .main {
-  position: absolute !important;
-  left: 50% !important;
-  top: 50% !important;
-  transform: translate(-50%, -50%) !important;
-  display: flex !important;
-  align-items: center !important;
-  flex-direction: column !important;
-  padding: 40px !important;
-  border-radius: 20px !important;
-  background: rgba(255, 255, 255, 0.1) !important;
-  backdrop-filter: blur(20px) !important;
-  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  padding: 40px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px); /* Safari支持 */
+  border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: 
     0 25px 45px rgba(0, 0, 0, 0.1),
-    0 0 80px rgba(255, 255, 255, 0.1) !important;
-  animation: glass-glow 3s ease-in-out infinite alternate !important;
-  min-width: 320px !important;
-  text-align: center !important;
+    0 0 80px rgba(255, 255, 255, 0.1);
+  animation: glass-glow 3s ease-in-out infinite alternate;
+  min-width: 320px;
+  text-align: center;
+  will-change: transform, box-shadow;
 }
 
 /* 状态指示器 */
@@ -158,21 +183,22 @@ body::before {
 
 /* 主按钮 */
 #main-button {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-  border: none !important;
-  border-radius: 50px !important;
-  padding: 16px 48px !important;
-  font-size: 18px !important;
-  font-weight: 600 !important;
-  color: white !important;
-  cursor: pointer !important;
-  transition: all 0.3s ease !important;
-  position: relative !important;
-  overflow: hidden !important;
-  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4) !important;
-  text-transform: uppercase !important;
-  letter-spacing: 1px !important;
-  outline: none !important;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 50px;
+  padding: 16px 48px;
+  font-size: 18px;
+  font-weight: 600;
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  outline: none;
+  will-change: transform, box-shadow;
 }
 
 #main-button::before {
@@ -217,6 +243,49 @@ body::before {
 /* 不支持的浏览器样式 */
 .unsupported {
   display: none;
+}
+
+.unsupported h3 {
+  color: #ff6b6b;
+  margin-bottom: 20px;
+  font-size: 24px;
+  font-weight: 700;
+}
+
+.unsupported p {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 16px;
+  line-height: 1.6;
+}
+
+.unsupported ul {
+  text-align: left;
+  margin: 16px 0;
+  padding-left: 20px;
+}
+
+.unsupported li {
+  color: rgba(255, 255, 255, 0.8);
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.unsupported button {
+  background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+  border: none;
+  border-radius: 25px;
+  padding: 12px 24px;
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.unsupported button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(255, 107, 107, 0.4);
 }
 
 .csdn-warning {
