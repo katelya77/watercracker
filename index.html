@@ -108,6 +108,42 @@
       <button id="main-button" style="margin: 10px 0%">开启</button>
       <p id="device-name" style="margin-top: 10px; margin-bottom: 10px">未连接</p>
     </div>
+    
+    <script>
+      // 立即执行蓝牙检测，不等待其他脚本加载
+      (function() {
+        function quickBluetoothCheck() {
+          const statusEl = document.getElementById("bluetooth-status");
+          if (!statusEl) {
+            setTimeout(quickBluetoothCheck, 50);
+            return;
+          }
+          
+          try {
+            if (typeof navigator !== 'undefined' && 'bluetooth' in navigator && navigator.bluetooth) {
+              statusEl.innerHTML = "✅ 浏览器支持蓝牙功能";
+              statusEl.style.color = "rgba(144, 238, 144, 0.9)";
+              console.log("快速蓝牙检测：支持");
+            } else {
+              statusEl.innerHTML = "⚠️ 浏览器不支持蓝牙，功能可能受限";
+              statusEl.style.color = "rgba(255, 182, 193, 0.9)";
+              console.log("快速蓝牙检测：不支持");
+            }
+          } catch (error) {
+            statusEl.innerHTML = "❌ 蓝牙检测出错";
+            statusEl.style.color = "rgba(255, 182, 193, 0.9)";
+            console.error("快速蓝牙检测错误:", error);
+          }
+        }
+        
+        // DOM加载完成后立即检测
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", quickBluetoothCheck);
+        } else {
+          quickBluetoothCheck();
+        }
+      })();
+    </script>
     <div class="misc">
       <button id="install-button" hidden>将蓝牙水控器 FOSS 安装到系统</button>
       <p style="font-size: smaller; color: gray; margin: 0%">
