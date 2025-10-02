@@ -4,6 +4,11 @@
     <meta charset="utf-8" />
     <link rel="icon" href="favicon.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="现代化蓝牙水控器控制程序 - 适用于高校宿舍热水器的开源解决方案" />
+    <meta name="theme-color" content="#667eea" />
+    <link rel="apple-touch-icon" href="logo192.png" />
+    <link rel="manifest" href="manifest.json" />
+    <title>💧 蓝牙水控器 | Modern Water Controller</title>
     <meta name="description" content="深圳市常工电子“蓝牙水控器”控制程序的开源实现。适用于国内各大高校宿舍热水器。" />
     <meta name="theme-color" content="#fafafa" />
     <link rel="apple-touch-icon" href="logo192.png" />
@@ -12,16 +17,32 @@
   </head>
 
   <body>
+    <!-- 简单粒子背景 (Canvas系统的后备方案) -->
+    <div class="particles">
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+      <div class="particle"></div>
+    </div>
+    
     <div class="main supported">
       <noscript>需要启用 JavaScript。</noscript>
-      <button id="main-button" style="margin: 0%">开启</button>
-      <p id="device-name" style="margin-top: 10px; margin-bottom: 10px">未连接</p>
+      <div class="status-indicator">
+        <div class="status-dot" id="status-dot"></div>
+        <span class="status-text" id="status-text">就绪</span>
+      </div>
+      <button id="main-button">🚀 开启水控器</button>
+      <p id="device-name">🔌 未连接设备</p>
     </div>
     <div class="main unsupported">
-      <h3>不支持的浏览器</h3>
-      <p>需要支持蓝牙的浏览器，如 Chrome 或 Edge。</p>
+      <h3>🚫 不支持的浏览器</h3>
+      <p>💡 需要支持蓝牙的现代浏览器</p>
+      <p>推荐使用 Chrome、Edge 或 Firefox 浏览器</p>
       <p>
-        <a href="https://github.com/katelya77/watercracker/blob/main/FAQ.md" target="_blank"><button>查看支持列表</button></a>
+        <a href="https://github.com/katelya77/watercracker/blob/main/FAQ.md" target="_blank">
+          <button>📋 查看支持列表</button>
+        </a>
       </p>
     </div>
     <div class="main csdn-warning">
