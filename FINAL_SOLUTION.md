@@ -51,18 +51,18 @@ git commit -m "Fix: Remove all warnings and fix UI"
 git push origin main
 ```
 
-4. **配置GitHub Pages**
+1. **配置GitHub Pages**
    - 进入仓库 Settings → Pages
    - Source: Deploy from a branch
    - Branch: main / (root)
    - 点击 Save
 
-5. **等待部署**
+2. **等待部署**
    - GitHub Actions会自动部署
    - 通常需要1-2分钟
    - 查看 Actions 标签页确认部署状态
 
-6. **访问测试**
+3. **访问测试**
    - 等待部署完成后访问: <https://katelya77.github.io/watercracker/>
    - 强制刷新: `Ctrl + F5`
 
