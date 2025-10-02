@@ -1,87 +1,52 @@
-# 💧 蓝牙水控器 | Modern Water Controller
+# 🛀 蓝牙水控器 FOSS (现代化版本)
 
-现代化蓝牙水控器控制程序 - 专为高校宿舍热水器设计的开源解决方案，具有炫酷的霓虹玻璃磨砂质感界面。
+深圳市常工电子"蓝牙水控器"控制程序的开源实现。适用于国内各大高校宿舍热水器。
+
+本项目基于 [celesWuff/waterctl](https://github.com/celesWuff/waterctl) 原始代码进行二次开发，在保持完整功能的基础上优化了UI界面。
 
 ![waterctl](waterctl.jpg)
 
-## 🚀 快速开始
+## 🏃 使用
 
-- 🌎 **在线体验**: <https://katelya77.github.io/watercracker>
-- � **强制显示**: <https://katelya77.github.io/watercracker?force=true> (如果遇到兼容性问题)
-- �💡 **疑难解答**: [FAQ.md](https://github.com/katelya77/watercracker/blob/main/FAQ.md)
-- 🔧 **源代码**: [GitHub Repository](https://github.com/katelya77/watercracker)
+- 🌎 开始使用： [https://katelya77.github.io/watercracker/](https://katelya77.github.io/watercracker/)
+- 不能用？请先看看"疑难解答"： [FAQ.md](FAQ.md)
 
-## ✨ 全新特性
+## ✨ 新增特性
 
-### 🎨 现代化UI设计
+- 🎨 **现代化玻璃磨砂质感UI界面** - 梯度背景 + 毛玻璃效果
+- 🎯 **保持100%原有功能** - 完整的蓝牙水控器操作功能
+- 💎 **响应式设计** - 适配各种屏幕尺寸
+- ✨ **优雅的交互动画** - 按钮悬停和点击效果
 
-- 🌟 **霓虹玻璃磨砂质感** - 精美的毛玻璃效果和霓虹光影
-- 🎭 **动态粒子背景** - Canvas渲染的交互式粒子系统
-- 🌈 **渐变色彩方案** - 从紫蓝到粉红的梦幻渐变
-- 📱 **响应式设计** - 完美适配各种屏幕尺寸
-- ⚡ **流畅动画效果** - 丝滑的过渡和悬停效果
+## 🔧 原有特性
 
-### 🔧 技术特性
-
-- 🌐 **完全离线使用** - 无需互联网连接
-- 🚫 **去除检测机制** - 移除了CSDN/GitCode检测限制
-- ⚛️ **现代Web技术** - TypeScript + Vite + CSS3
-- 💾 **PWA支持** - 可安装到桌面和手机
-- 🎯 **状态指示器** - 实时连接状态显示
-- 🖱️ **鼠标跟随效果** - 交互式光标追踪
-
-### 🌍 兼容性
-
+- 🌐 真正离线使用，不依赖互联网连接（你可以在离线状态下打开本应用的链接）
+- 🖕 完全脱离"微信"，夺回对科技的控制权
+- ⚛️ 使用开放的Web技术构建
+- 💡 简洁，明确，美观的操作界面
+- ⚡ 响应速度极快
+- 🔥 简化的交互逻辑
+- 🖥️ 支持 PWA，可在 Chrome/Edge 里点击地址栏右边的 ➕ 安装到电脑或手机
 - 📱 支持 Windows/Linux/macOS/Android/iOS/ChromeOS
-- 🌐 兼容 Chrome/Edge/Firefox 等现代浏览器
-- ♿ 支持高对比度和无障碍访问
-- 🌙 自动适配深色模式
+- 👍 开放源代码
 
-## 🛠️ 本地开发
+## 🛠️ 开发说明
+
+本项目保持了原始 waterctl 的完整功能逻辑，仅对UI界面进行了现代化改进：
+
+1. **保留原有检测逻辑** - 完全保持 `navigator.bluetooth` 和 CSDN 检测
+2. **保留原有蓝牙功能** - 完整的蓝牙设备连接和控制逻辑
+3. **仅优化CSS样式** - 添加渐变背景、玻璃磨砂效果、现代化按钮样式
+
+### 构建
 
 ```bash
-# 克隆仓库
-git clone https://github.com/katelya77/watercracker.git
-cd watercracker
-
-# 安装依赖
 npm install
-
-# 启动开发服务器
-npm run dev
-
-# 构建生产版本
 npm run build
 ```
 
-## 🎉 改进内容
+## 📄 版权声明
 
-相比原版，我们进行了以下重大改进：
-
-- ❌ **删除了CSDN/GitCode检测** - 不再阻止用户从任何渠道访问
-- 🎨 **全新UI设计** - 霓虹玻璃磨砂质感，现代化视觉体验
-- ✨ **动画和特效** - 粒子背景、悬停效果、页面加载动画
-- 📱 **移动端优化** - 更好的触屏体验和响应式布局
-- 🚀 **性能优化** - 更快的加载速度和更流畅的交互
-
-## 📸 预览
-
-界面特色：
-
-- 🔮 毛玻璃背景效果
-- ✨ 动态粒子系统
-- 🎆 霓虹发光按钮
-- 📊 实时状态指示
-- 🎨 渐变色彩方案
-
-## 🤝 贡献
-
-欢迎提交 Issues 和 Pull Requests！
-
-## 📜 开源许可
-
-基于 [MIT License](https://opensource.org/licenses/MIT) 许可进行开源。
-
----
-
-💡 **提示**: 本项目专注于提供更好的用户体验，移除了不必要的访问限制，让每个人都能自由使用这个工具。
+- 原始代码版权归 [celesWuff](https://github.com/celesWuff) 所有
+- UI 改进版本由 katelya77 开发
+- 基于 [MIT license](https://opensource.org/licenses/MIT) 许可进行开源
