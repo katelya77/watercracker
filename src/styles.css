@@ -1,64 +1,97 @@
+/* 强制覆盖water.css的默认样式 */
 body {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  background-attachment: fixed;
-  min-height: 100vh;
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  background-attachment: fixed !important;
+  min-height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  overflow-x: hidden !important;
 }
 
 .main {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  -webkit-transform: translate(-50%, -50%);
-  transform: translate(-50%, -50%);
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  background: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 30px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  min-width: 300px;
-  text-align: center;
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  -webkit-transform: translate(-50%, -50%) !important;
+  transform: translate(-50%, -50%) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex-direction: column !important;
+  background: rgba(255, 255, 255, 0.15) !important;
+  backdrop-filter: blur(15px) !important;
+  -webkit-backdrop-filter: blur(15px) !important;
+  border-radius: 25px !important;
+  padding: 40px 50px !important;
+  border: 2px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.2) !important;
+  min-width: 350px !important;
+  max-width: 500px !important;
+  text-align: center !important;
+  margin: 0 !important;
+}
+
+.main h2 {
+  color: white !important;
+  text-shadow: 0 3px 6px rgba(0, 0, 0, 0.4) !important;
+  margin-top: 0 !important;
+  margin-bottom: 15px !important;
+  font-size: 28px !important;
+  font-weight: 700 !important;
 }
 
 .main h3 {
-  color: white;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  margin-top: 0;
+  color: white !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  margin-top: 0 !important;
+  margin-bottom: 10px !important;
+  font-size: 22px !important;
 }
 
 .main p {
-  color: rgba(255, 255, 255, 0.9);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
+  margin: 8px 0 !important;
+  font-size: 15px !important;
+  line-height: 1.6 !important;
 }
 
 #main-button {
-  background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%);
-  border: none;
-  color: white;
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  border-radius: 25px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(45deg, #4facfe 0%, #00f2fe 100%) !important;
+  border: none !important;
+  color: white !important;
+  padding: 15px 35px !important;
+  font-size: 18px !important;
+  font-weight: 700 !important;
+  border-radius: 30px !important;
+  cursor: pointer !important;
+  transition: all 0.3s ease !important;
+  box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4) !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3) !important;
+  margin: 15px 0 !important;
+  min-width: 150px !important;
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
 }
 
 #main-button:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+  transform: translateY(-3px) !important;
+  box-shadow: 0 8px 25px rgba(79, 172, 254, 0.6) !important;
+  background: linear-gradient(45deg, #00f2fe 0%, #4facfe 100%) !important;
+}
+
+#main-button:active {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 15px rgba(79, 172, 254, 0.5) !important;
 }
 
 #main-button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-  transform: none;
+  opacity: 0.6 !important;
+  cursor: not-allowed !important;
+  transform: none !important;
+  background: linear-gradient(45deg, #888 0%, #666 100%) !important;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
 }
 
 .main button {

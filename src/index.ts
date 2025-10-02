@@ -4,7 +4,6 @@ import "./writeValueLogging";
 import { handleButtonClick } from "./bluetooth";
 import { registerServiceWorker, resizeWindow, setupInstallButton } from "./pwaHelper";
 import * as Sentry from "@sentry/browser";
-import { isCsdn } from "./utils";
 
 Sentry.init({
   dsn: "https://17d03841e2244d53abdbe587434efd5c@glitchtip.celeswuff.science/1",
@@ -26,21 +25,13 @@ function checkBluetoothStatus() {
   }
 }
 
-// 移除严格的蓝牙检测，默认显示主界面
-// 仅在明确检测到CSDN时显示警告
-if (isCsdn()) {
-  (document.querySelector(".supported") as HTMLElement).style.display = "none";
-  (document.querySelector(".unsupported") as HTMLElement).style.display = "none";
-  (document.querySelector(".csdn-warning") as HTMLElement).style.display = "block";
-} else {
-  // 默认显示主界面，让用户自己判断是否支持蓝牙
-  (document.querySelector(".supported") as HTMLElement).style.display = "block";
-  (document.querySelector(".unsupported") as HTMLElement).style.display = "none";
-  (document.querySelector(".csdn-warning") as HTMLElement).style.display = "none";
-  
-  // 检查并显示蓝牙状态
-  setTimeout(checkBluetoothStatus, 100);
-}
+// 完全移除CSDN和浏览器检测，直接显示主界面
+(document.querySelector(".supported") as HTMLElement).style.display = "block";
+(document.querySelector(".unsupported") as HTMLElement).style.display = "none";
+(document.querySelector(".csdn-warning") as HTMLElement).style.display = "none";
+
+// 检查并显示蓝牙状态
+setTimeout(checkBluetoothStatus, 100);
 
 document.addEventListener("DOMContentLoaded", () => {
   const mainButton = document.getElementById("main-button") as HTMLButtonElement;
