@@ -93,20 +93,27 @@ export class ProtocolAdapter {
 
     switch (dType) {
       case 0xb0: // 初始握手
-        log("忽略0xb0握手包，由原有逻辑处理");
-        return false; // 让原有逻辑处理
+      case 0xb1:
+        log("V1协议：处理0xb0/0xb1握手包");
+        // 让原有逻辑处理，但标记为已处理以避免重复
+        return false; // 返回false让原有逻辑继续
+      
       case 0xae: // 密钥请求
-        log("忽略0xae密钥包，由原有逻辑处理");
-        return false; // 让原有逻辑处理
+        log("V1协议：处理0xae密钥包");
+        return false; // 让原有逻辑处理密钥请求
+      
       case 0xaf: // 认证响应
-        log("忽略0xaf认证包，由原有逻辑处理");
-        return false; // 让原有逻辑处理
-      case 0x7A:
+        log("V1协议：处理0xaf认证包");
+        return false; // 让原有逻辑处理认证响应
+      
+      case 0x7a: // 新的认证步骤（仅在某些新固件中出现）
         return await this.handleNewAuthStep(payload, txdCharacteristic);
-      case 0x8E:
+      
+      case 0x8e: // 密钥交换（仅在某些新固件中出现）
         return await this.handleKeyExchange(payload, txdCharacteristic);
+      
       default:
-        return false;
+        return false; // 未知包让原有逻辑处理
     }
   }
 

@@ -104,6 +104,47 @@ function initialize() {
     console.error("❌ 未找到主按钮元素！");
   }
   
+  // 🆕 绑定清除配对设备按钮
+  const clearPairingButton = document.getElementById("clear-pairing-button") as HTMLButtonElement;
+  if (clearPairingButton) {
+    clearPairingButton.onclick = async function() {
+      try {
+        if (!navigator.bluetooth || !navigator.bluetooth.getDevices) {
+          alert("您的浏览器不支持获取已配对设备");
+          return;
+        }
+        
+        const devices = await navigator.bluetooth.getDevices();
+        console.log("已配对设备:", devices);
+        
+        if (devices.length === 0) {
+          alert("没有已配对的蓝牙设备");
+          return;
+        }
+        
+        let clearedCount = 0;
+        for (const device of devices) {
+          if (device.forget) {
+            await device.forget();
+            clearedCount++;
+            console.log("已清除设备:", device.name || device.id);
+          }
+        }
+        
+        if (clearedCount > 0) {
+          alert(`已清除 ${clearedCount} 个已配对设备\n页面将刷新以应用更改`);
+          window.location.reload();
+        } else {
+          alert("浏览器不支持清除配对设备");
+        }
+      } catch (error) {
+        console.error("清除配对设备时出错:", error);
+        alert("清除配对设备失败: " + (error as Error).message);
+      }
+    };
+    console.log("清除配对按钮事件已绑定");
+  }
+  
   isInitialized = true;
   console.log("应用初始化完成");
 }

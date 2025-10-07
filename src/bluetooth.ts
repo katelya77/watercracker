@@ -150,13 +150,19 @@ async function handleRxdNotifications(event: Event) {
           case 0x55: // key authentication ok; continue to send start epilogue (B2)
             await txdCharacteristic.writeValue(makeStartEpilogue(bluetoothDevice.name!, true) as BufferSource);
             break;
+          case 0x7A: // 🔥 新固件：新的认证成功响应码
+            log("检测到新固件0xaf包中的0x7a响应，继续发送start epilogue");
+            await txdCharacteristic.writeValue(makeStartEpilogue(bluetoothDevice.name!, true) as BufferSource);
+            break;
           case 0x01: // key authentication failed; "err41" (bad key)
           case 0x02: // ?
           case 0x04: // "err43" (bad nonce)
             throw new Error("WATERCTL INTERNAL Bad key");
           default:
+            log(`警告：收到未知的0xaf响应码: 0x${payload[5].toString(16)}，尝试继续`);
             await txdCharacteristic.writeValue(makeStartEpilogue(bluetoothDevice.name!, true) as BufferSource);
-            throw new Error("WATERCTL INTERNAL Unknown RXD data");
+            // 不再抛出错误，而是尝试继续
+            break;
         }
         break;
       case 0xB2: // start ok; update ui
