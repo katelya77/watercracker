@@ -132,8 +132,8 @@
       <noscript>需要启用 JavaScript。</noscript>
       <h2 style="margin-top: 0; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🛀 蓝牙水控器</h2>
       <p id="bluetooth-status" style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 5px 0;">检测蓝牙支持中...</p>
-      <button id="main-button">开启</button>
-      <button id="clear-pairing-button" style="background: linear-gradient(45deg, #ff6b6b, #ee5a6f) !important; font-size: 14px !important; padding: 8px 20px !important;">清除已配对设备</button>
+      <button id="main-button" onclick="window.startWaterController && window.startWaterController(); console.log('HTML内联点击事件触发');">开启</button>
+      <button id="clear-pairing-button" style="background: linear-gradient(45deg, #ff6b6b, #ee5a6f) !important; font-size: 14px !important; padding: 8px 20px !important;" onclick="window.clearPairedDevices && window.clearPairedDevices(); console.log('清除按钮HTML内联事件触发');">清除已配对设备</button>
       <p id="device-name" style="margin-top: 10px; margin-bottom: 10px">未连接</p>
     </div>
     
