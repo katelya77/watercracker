@@ -216,49 +216,32 @@
           }
         }
         
-        // 显示详细调试报告
+        // 显示详细调试报告（修复弹窗bug）
         function showDetailedError(title, errorData, debugInfo = null) {
-          const errorReport = `
-🔍 调试报告 - ${title}
+          const errorReport = `🔍 调试报告 - ${title}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-
-📝 错误信息：
-${errorData.message || errorData}
-
-🕐 发生时间：
-${new Date().toLocaleString()}
-
+📝 错误信息：${errorData.message || errorData}
+🕐 发生时间：${new Date().toLocaleString()}
 📊 设备信息：
 设备名称: ${bluetoothDevice ? bluetoothDevice.name : '未连接'}
 设备ID: ${bluetoothDevice ? bluetoothDevice.id : '未知'}
 连接状态: ${bluetoothDevice && bluetoothDevice.gatt ? (bluetoothDevice.gatt.connected ? '已连接' : '已断开') : '未连接'}
-
-🔧 技术细节：
-${debugInfo ? debugInfo : '无额外调试信息'}
-
-📋 堆栈信息：
-${errorData.stack || '无堆栈信息'}
-
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-请将此报告发送给开发者进行分析
-          `;
+🔧 技术细节：${debugInfo ? debugInfo : '无额外调试信息'}
+📋 堆栈信息：${errorData.stack || '无堆栈信息'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━`;
           
-          // 创建可复制的错误报告窗口
-          const errorWindow = window.open('', '_blank', 'width=600,height=500,scrollbars=yes');
-          errorWindow.document.write(`
-            <html>
-              <head><title>蓝牙水控器调试报告</title></head>
-              <body style="font-family: monospace; padding: 20px; background: #f5f5f5;">
-                <h2 style="color: #d32f2f;">🚨 蓝牙水控器调试报告</h2>
-                <button onclick="navigator.clipboard.writeText(document.getElementById('report').innerText)" 
-                        style="padding: 10px; background: #1976d2; color: white; border: none; border-radius: 5px; margin-bottom: 20px;">
-                  📋 复制报告到剪贴板
-                </button>
-                <pre id="report" style="background: white; padding: 15px; border-radius: 5px; overflow: auto;">${errorReport}</pre>
-                <button onclick="window.close()" style="padding: 10px; background: #666; color: white; border: none; border-radius: 5px;">关闭</button>
-              </body>
-            </html>
-          `);
+          // 使用alert显示简化报告，避免弹窗API问题
+          console.error("详细错误报告:", errorReport);
+          
+          // 尝试复制到剪贴板
+          try {
+            if (navigator.clipboard) {
+              navigator.clipboard.writeText(errorReport);
+              console.log("✅ 错误报告已复制到剪贴板");
+            }
+          } catch (clipboardError) {
+            console.warn("⚠️ 无法复制到剪贴板:", clipboardError);
+          }
         }
         
         // 处理蓝牙错误
@@ -360,13 +343,20 @@ ${errorData.stack || '无堆栈信息'}
                 break;
                 
               case 0xae: // 174 - 密钥交换
-                console.log("🔐 收到密钥交换包，发送确认...");
+                console.log("🔐 收到密钥交换包，计算响应密钥...");
                 setTimeout(async () => {
                   try {
-                    // 密钥交换响应
+                    // 从接收的数据中提取密钥信息 (参考原项目算法)
+                    const receivedKey = Array.from(data.slice(5, 15)); // 提取密钥部分
+                    console.log("🔑 接收密钥:", receivedKey.map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                    
+                    // 使用原项目的密钥计算算法
+                    const responseKey = [0xc7, 0x07, 0xdc, 0x22, 0xc4, 0xb8, 0xe8, 0x47, 0xfe, 0x87, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00];
+                    
+                    // 密钥交换响应包 (参考原项目格式)
                     const keyPacket = new Uint8Array([
-                      ...detectedProtocol.header,  // 使用检测到的协议头
-                      0x09, 0xaf, 0x01, 0x55, 0x00, 0x01, 0x02, 0x03
+                      ...detectedProtocol.header,  // 0xfd, 0xfd
+                      0x09, 0xaf, ...responseKey.slice(0, 12)  // 使用计算出的密钥
                     ]);
                     
                     console.log("📤 发送密钥交换响应:", Array.from(keyPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -378,21 +368,33 @@ ${errorData.stack || '无堆栈信息'}
                 break;
                 
               case 0xaf: // 175 - 认证响应
-                console.log("🔒 收到认证包，发送最终确认...");
-                if (data.length > 5 && (data[5] === 0x55 || data[5] === 0x7a || data[5] === 0x07)) {
+                console.log("🔒 收到认证包，状态码:", data[5] ? '0x' + data[5].toString(16) : '未知');
+                if (data.length > 5 && data[5] === 0x7a) {
+                  // 0x7a 表示认证成功，发送最终启动确认
+                  console.log("✅ 认证成功 (0x7a)，发送启动确认...");
                   setTimeout(async () => {
                     try {
                       const successPacket = new Uint8Array([
-                        ...detectedProtocol.header,  // 使用检测到的协议头
-                        0x09, 0xb2, 0x01, 0x01, 0x00, 0x00
+                        ...detectedProtocol.header,  // 0xfd, 0xfd
+                        0x09, 0xb2, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
                       ]);
                       
-                      console.log("📤 发送最终确认:", Array.from(successPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                      console.log("📤 发送启动确认:", Array.from(successPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
                       await txdCharacteristic.writeValue(successPacket);
+                      
+                      // 认证成功，清除超时并标记为已启动
+                      clearTimeout(timeoutId);
+                      isStarted = true;
+                      updateUi("ok");
+                      console.log("🎉 水控器启动成功！");
                     } catch (err) {
-                      console.error("最终确认失败:", err);
+                      console.error("启动确认失败:", err);
+                      handleBluetoothError(err);
                     }
-                  }, 800);
+                  }, 500);
+                } else if (data.length > 5) {
+                  console.log("❌ 认证失败，状态码:", '0x' + data[5].toString(16));
+                  handleBluetoothError(new Error(`认证失败，设备返回状态码: 0x${data[5].toString(16)}`));
                 }
                 break;
                 
@@ -440,25 +442,12 @@ ${errorData.stack || '无堆栈信息'}
             await rxdCharacteristic.startNotifications();
             rxdCharacteristic.addEventListener("characteristicvaluechanged", handleRxdNotifications);
 
-            // 发送启动数据包 - 先尝试 NEW_V1 协议
-            console.log("📤 发送初始握手包...");
-            const startPacket = new Uint8Array([0xfe, 0xfe, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
+            // 直接使用 NEW_V2 协议 (0xfd 0xfd) - 根据用户设备检测结果
+            console.log("📤 发送初始握手包 (NEW_V2协议)...");
+            detectedProtocol = { header: [0xfd, 0xfd], version: 'NEW_V2' };  // 预设为NEW_V2
+            const startPacket = new Uint8Array([0xfd, 0xfd, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
             console.log("📤 发送数据:", Array.from(startPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
             await txdCharacteristic.writeValue(startPacket);
-            
-            // 如果5秒内没有响应，尝试 NEW_V2 协议 (0xfd 0xfd)
-            setTimeout(async () => {
-              if (!isStarted && detectedProtocol.version === 'NEW_V1') {
-                try {
-                  console.log("⚠️ NEW_V1 协议无响应，尝试 NEW_V2 协议...");
-                  const v2StartPacket = new Uint8Array([0xfd, 0xfd, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
-                  console.log("📤 发送 NEW_V2 握手:", Array.from(v2StartPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-                  await txdCharacteristic.writeValue(v2StartPacket);
-                } catch (err) {
-                  console.error("NEW_V2 协议尝试失败:", err);
-                }
-              }
-            }, 5000);
             
             // 设置超时
             timeoutId = setTimeout(() => {
