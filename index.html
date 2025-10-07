@@ -333,6 +333,165 @@
           forceButtonBinding();
           setupDebugClick();
         }
+        
+        // 🔥 直接在HTML中实现蓝牙功能，避免模块加载问题
+        let bluetoothDevice = null;
+        let txdCharacteristic = null;
+        let rxdCharacteristic = null;
+        let isStarted = false;
+        let timeoutId = null;
+        
+        // 更新UI状态
+        function updateUi(state) {
+          const mainButton = document.getElementById("main-button");
+          const deviceName = document.getElementById("device-name");
+          
+          switch (state) {
+            case "pending":
+              mainButton.textContent = "请稍候";
+              mainButton.disabled = true;
+              deviceName.textContent = "已连接：" + (bluetoothDevice ? bluetoothDevice.name : "未知设备");
+              break;
+            case "ok":
+              mainButton.textContent = "结束";
+              mainButton.disabled = false;
+              break;
+            case "standby":
+              mainButton.textContent = "开启";
+              mainButton.disabled = false;
+              deviceName.textContent = "未连接";
+              break;
+          }
+        }
+        
+        // 处理蓝牙错误
+        function handleBluetoothError(error) {
+          console.error("蓝牙错误:", error);
+          updateUi("standby");
+          
+          let message = "蓝牙连接失败";
+          if (error.message.includes("User cancelled")) {
+            return; // 用户取消，不显示错误
+          } else if (error.message.includes("not available")) {
+            message = "蓝牙不可用，请检查蓝牙是否开启";
+          } else if (error.message.includes("No Services")) {
+            message = "设备不兼容，请检查设备型号";
+          } else {
+            message = "连接失败: " + error.message;
+          }
+          
+          alert(message);
+        }
+        
+        // 处理接收到的数据
+        async function handleRxdNotifications(event) {
+          const value = event.target.value;
+          console.log("接收数据:", Array.from(new Uint8Array(value.buffer)).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+          
+          try {
+            let data = new Uint8Array(value.buffer);
+            
+            // 简化的协议处理
+            if (data.length < 4) return;
+            
+            switch (data[3]) {
+              case 0xb0: // 176
+              case 0xb1: // 177
+                // 握手响应
+                setTimeout(async () => {
+                  const nameBytes = new TextEncoder().encode(bluetoothDevice.name);
+                  const packet = new Uint8Array([0xfe, 0xfe, 0x09, 0xb2, 0x01, ...nameBytes]);
+                  await txdCharacteristic.writeValue(packet);
+                }, 500);
+                break;
+                
+              case 0xae: // 174
+                // 密钥交换响应
+                console.log("处理密钥交换");
+                break;
+                
+              case 0xaf: // 175
+                // 认证响应
+                if (data[5] === 0x55 || data[5] === 0x7a) {
+                  const successPacket = new Uint8Array([0xfe, 0xfe, 0x09, 0xb2, 0x01, 0x01, 0x00, 0x00]);
+                  setTimeout(() => txdCharacteristic.writeValue(successPacket), 800);
+                }
+                break;
+                
+              case 0xb2: // 178
+                console.log("🎉 水控器启动成功！");
+                clearTimeout(timeoutId);
+                isStarted = true;
+                updateUi("ok");
+                break;
+                
+              case 0xb3: // 179
+                // 结束响应
+                updateUi("standby");
+                bluetoothDevice.gatt.disconnect();
+                break;
+            }
+          } catch (error) {
+            handleBluetoothError(error);
+          }
+        }
+        
+        // 启动蓝牙连接
+        async function startBluetooth() {
+          try {
+            if (!navigator.bluetooth) {
+              throw new Error("蓝牙API不可用");
+            }
+            
+            bluetoothDevice = await navigator.bluetooth.requestDevice({
+              filters: Array.from("0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ").map((c) => ({ namePrefix: c })),
+              optionalServices: [0xf1f0]
+            });
+
+            updateUi("pending");
+
+            const server = await bluetoothDevice.gatt.connect();
+            const service = await server.getPrimaryService(0xf1f0);
+            txdCharacteristic = await service.getCharacteristic(0xf1f1);
+            rxdCharacteristic = await service.getCharacteristic(0xf1f2);
+
+            await rxdCharacteristic.startNotifications();
+            rxdCharacteristic.addEventListener("characteristicvaluechanged", handleRxdNotifications);
+
+            // 发送启动数据包
+            const startPacket = new Uint8Array([0xfe, 0xfe, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
+            await txdCharacteristic.writeValue(startPacket);
+            
+            // 设置超时
+            timeoutId = setTimeout(() => {
+              handleBluetoothError(new Error("连接超时"));
+            }, 25000);
+            
+          } catch (error) {
+            handleBluetoothError(error);
+          }
+        }
+        
+        // 结束连接
+        async function endBluetooth() {
+          try {
+            const endPacket = new Uint8Array([0xfe, 0xfe, 0x09, 0xb3, 0x00, 0x00]);
+            await txdCharacteristic.writeValue(endPacket);
+          } catch (error) {
+            handleBluetoothError(error);
+          }
+        }
+        
+        // 主要的按钮处理函数
+        function handleButtonClick() {
+          console.log("🚀 handleButtonClick被调用，当前状态:", isStarted);
+          isStarted ? endBluetooth() : startBluetooth();
+        }
+        
+        // 🔥 全局暴露函数
+        window.startWaterController = handleButtonClick;
+        
+        console.log("✅ 蓝牙功能已准备就绪");
       })();
     </script>
     <div class="misc">
@@ -356,6 +515,4 @@
       </form>
     </dialog>
   </body>
-
-  <script type="module" src="/src/index.ts"></script>
 </html>
