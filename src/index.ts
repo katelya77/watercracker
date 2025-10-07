@@ -79,23 +79,27 @@ function initialize() {
   // 执行蓝牙检测
   checkBluetoothStatus();
   
-  // 绑定按钮事件 - 使用更可靠的方法
+  // 绑定按钮事件 - 使用最简单直接的方法
   const mainButton = document.getElementById("main-button") as HTMLButtonElement;
   if (mainButton) {
-    // 移除可能存在的旧事件监听器
-    const newButton = mainButton.cloneNode(true) as HTMLButtonElement;
-    mainButton.parentNode?.replaceChild(newButton, mainButton);
+    console.log("找到按钮元素:", mainButton);
+    console.log("按钮当前disabled状态:", mainButton.disabled);
+    console.log("按钮当前style:", mainButton.style.cssText);
     
-    // 绑定新的事件监听器
-    newButton.addEventListener("click", handleButtonClick, { passive: false });
+    // 确保按钮可点击
+    mainButton.disabled = false;
+    mainButton.style.pointerEvents = "auto";
+    mainButton.style.cursor = "pointer";
     
-    // 确保按钮样式正确
-    newButton.style.pointerEvents = "auto";
-    newButton.style.cursor = "pointer";
+    // 直接使用onclick而不是addEventListener
+    mainButton.onclick = function(event) {
+      console.log("🔵 按钮被点击！", event);
+      event.preventDefault();
+      event.stopPropagation();
+      handleButtonClick();
+    };
     
-    console.log("按钮事件已绑定");
-    console.log("按钮元素:", newButton);
-    console.log("按钮disabled状态:", newButton.disabled);
+    console.log("按钮事件已绑定（使用onclick）");
   } else {
     console.error("❌ 未找到主按钮元素！");
   }

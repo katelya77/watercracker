@@ -70,6 +70,8 @@
         user-select: none !important;
         -webkit-user-select: none !important;
         -webkit-tap-highlight-color: transparent !important;
+        position: relative !important;
+        z-index: 1 !important;
       }
 
       .main button:hover {
@@ -87,6 +89,11 @@
         opacity: 0.6 !important;
         cursor: not-allowed !important;
         pointer-events: none !important;
+      }
+
+      /* 移除.main的pointer-events设置，避免阻止按钮点击 */
+      .main {
+        pointer-events: auto !important;
       }
 
       .main p {
