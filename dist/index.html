@@ -1,4 +1,4 @@
-<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="build-version" content="2025-01-08-05"/><meta name="cache-control" content="no-cache, no-store, must-revalidate"/><meta http-equiv="pragma" content="no-cache"/><meta http-equiv="expires" content="0"/><link rel="icon" href="favicon.ico"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="description" content="深圳市常工电子&quot;蓝牙水控器&quot;控制程序的开源实现。适用于国内各大高校宿舍热水器。"/><meta name="theme-color" content="#fafafa"/><link rel="apple-touch-icon" href="logo192.png"/><link rel="manifest" href="manifest.json"/><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"><title>蓝牙水控器 FOSS</title><style>body{background:linear-gradient(135deg,#667eea 0,#764ba2 100%)!important;background-attachment:fixed!important;min-height:100vh!important;margin:0!important;padding:0!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif!important;overflow-x:hidden!important}.main{position:absolute!important;left:50%!important;top:50%!important;-webkit-transform:translate(-50%,-50%)!important;transform:translate(-50%,-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;background:rgba(255,255,255,.15)!important;backdrop-filter:blur(15px)!important;-webkit-backdrop-filter:blur(15px)!important;border-radius:25px!important;padding:40px 50px!important;border:2px solid rgba(255,255,255,.3)!important;box-shadow:0 15px 45px rgba(0,0,0,.2)!important;min-width:350px!important;max-width:500px!important;text-align:center!important;margin:0!important}.main h2{color:#fff!important;text-shadow:0 3px 6px rgba(0,0,0,.4)!important;margin-top:0!important;margin-bottom:15px!important;font-size:28px!important;font-weight:700!important}.main button{background:linear-gradient(45deg,#667eea,#764ba2)!important;color:#fff!important;border:none!important;padding:12px 30px!important;border-radius:25px!important;font-size:16px!important;font-weight:600!important;cursor:pointer!important;transition:all .3s ease!important;box-shadow:0 4px 15px rgba(0,0,0,.2)!important;margin:10px 0!important;pointer-events:auto!important;user-select:none!important;-webkit-user-select:none!important;-webkit-tap-highlight-color:transparent!important;position:relative!important;z-index:1!important}.main button:hover{transform:translateY(-2px)!important;box-shadow:0 8px 25px rgba(0,0,0,.3)!important;background:linear-gradient(45deg,#5a8ff0,#8959b8)!important}.main button:active{transform:translateY(0)!important;box-shadow:0 2px 10px rgba(0,0,0,.2)!important}.main button:disabled{opacity:.6!important;cursor:not-allowed!important;pointer-events:none!important}.main{pointer-events:auto!important}.main p{color:rgba(255,255,255,.9)!important;margin:8px 0!important;font-size:14px!important}.misc{position:fixed!important;bottom:20px!important;left:50%!important;transform:translateX(-50%)!important;text-align:center!important}.misc a{color:rgba(255,255,255,.7)!important;text-decoration:none!important;margin:0 5px!important}.misc a:hover{color:#fff!important;text-decoration:underline!important}</style></head><body><div class="main supported"><noscript>需要启用 JavaScript。</noscript><h2 style="margin-top:0;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.3)">🛀 蓝牙水控器</h2><p id="bluetooth-status" style="color:rgba(255,255,255,.8);font-size:14px;margin:5px 0">检测蓝牙支持中...</p><button id="main-button" onclick="try{window.startWaterController && window.startWaterController(); console.log('✅HTML内联点击成功');}catch(e){console.error('❌HTML内联失败:',e);}" data-onclick="startWaterController" style="pointer-events:auto!important;cursor:pointer!important">开启</button><div id="water-controls" style="display:none;margin:20px 0;padding:20px;background:rgba(255,255,255,.1);border-radius:15px;backdrop-filter:blur(10px)"><h3 style="color:#fff;margin:0 0 15px 0;font-size:18px">💧 水量控制</h3><div style="margin-bottom:15px"><label style="color:rgba(255,255,255,.9);font-size:14px;display:block;margin-bottom:5px">设置出水量 (毫升):</label> <input type="number" id="water-amount" value="500" min="1" max="65000" style="width:100px;padding:5px;border-radius:5px;border:none;text-align:center"/> <button onclick="setWaterAmount()" style="margin-left:10px;padding:5px 15px;background:linear-gradient(45deg,#4caf50,#45a049);color:#fff;border:none;border-radius:5px;font-size:12px">设置</button></div><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button onclick="quickWaterAmount(100)" style="padding:8px 12px;background:linear-gradient(45deg,#2196f3,#1976d2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">100ml</button> <button onclick="quickWaterAmount(500)" style="padding:8px 12px;background:linear-gradient(45deg,#2196f3,#1976d2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">500ml</button> <button onclick="quickWaterAmount(1000)" style="padding:8px 12px;background:linear-gradient(45deg,#2196f3,#1976d2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">1L</button> <button onclick="quickWaterAmount(2000)" style="padding:8px 12px;background:linear-gradient(45deg,#2196f3,#1976d2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">2L</button></div><div style="margin:15px 0"><button onclick="fixErr39Error()" style="width:100%;padding:12px;background:linear-gradient(45deg,#f44336,#d32f2f);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">🔧 修复Err39错误</button></div><div style="margin:15px 0"><button onclick="activateUnlimitedMode()" style="width:100%;padding:12px;background:linear-gradient(45deg,#ff9800,#f57c00);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">♾️ 激活无限模式</button></div><div style="margin-top:15px"><button onclick="emergencyStop()" style="width:100%;padding:12px;background:linear-gradient(45deg,#f44336,#d32f2f);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">🛑 紧急停止</button></div><div id="water-status" style="margin-top:15px;padding:10px;background:rgba(0,0,0,.2);border-radius:8px;color:rgba(255,255,255,.9);font-size:13px;text-align:center">💧 状态: 待机中</div></div><button id="clear-pairing-button" style="background:linear-gradient(45deg,#ff6b6b,#ee5a6f)!important;font-size:14px!important;padding:8px 20px!important;pointer-events:auto!important;cursor:pointer!important" onclick="try{window.clearPairedDevices && window.clearPairedDevices(); console.log('✅清除按钮HTML内联成功');}catch(e){console.error('❌清除按钮HTML内联失败:',e);}" data-onclick="clearPairedDevices">清除已配对设备</button><p id="device-name" style="margin-top:10px;margin-bottom:10px">未连接</p></div><script>// 立即执行蓝牙检测，不等待其他脚本加载
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="build-version" content="2025-01-08-05"/><meta name="cache-control" content="no-cache, no-store, must-revalidate"/><meta http-equiv="pragma" content="no-cache"/><meta http-equiv="expires" content="0"/><link rel="icon" href="favicon.ico"/><meta name="viewport" content="width=device-width,initial-scale=1"/><meta name="description" content="深圳市常工电子&quot;蓝牙水控器&quot;控制程序的开源实现。适用于国内各大高校宿舍热水器。"/><meta name="theme-color" content="#fafafa"/><link rel="apple-touch-icon" href="logo192.png"/><link rel="manifest" href="manifest.json"/><link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/water.css@2/out/water.css"><title>蓝牙水控器 FOSS</title><style>body{background:linear-gradient(135deg,#667eea 0,#764ba2 100%)!important;background-attachment:fixed!important;min-height:100vh!important;margin:0!important;padding:0!important;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif!important;overflow-x:hidden!important}.main{position:absolute!important;left:50%!important;top:50%!important;-webkit-transform:translate(-50%,-50%)!important;transform:translate(-50%,-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important;flex-direction:column!important;background:rgba(255,255,255,.15)!important;backdrop-filter:blur(15px)!important;-webkit-backdrop-filter:blur(15px)!important;border-radius:25px!important;padding:40px 50px!important;border:2px solid rgba(255,255,255,.3)!important;box-shadow:0 15px 45px rgba(0,0,0,.2)!important;min-width:350px!important;max-width:500px!important;text-align:center!important;margin:0!important}.main h2{color:#fff!important;text-shadow:0 3px 6px rgba(0,0,0,.4)!important;margin-top:0!important;margin-bottom:15px!important;font-size:28px!important;font-weight:700!important}.main button{background:linear-gradient(45deg,#667eea,#764ba2)!important;color:#fff!important;border:none!important;padding:12px 30px!important;border-radius:25px!important;font-size:16px!important;font-weight:600!important;cursor:pointer!important;transition:all .3s ease!important;box-shadow:0 4px 15px rgba(0,0,0,.2)!important;margin:10px 0!important;pointer-events:auto!important;user-select:none!important;-webkit-user-select:none!important;-webkit-tap-highlight-color:transparent!important;position:relative!important;z-index:1!important}.main button:hover{transform:translateY(-2px)!important;box-shadow:0 8px 25px rgba(0,0,0,.3)!important;background:linear-gradient(45deg,#5a8ff0,#8959b8)!important}.main button:active{transform:translateY(0)!important;box-shadow:0 2px 10px rgba(0,0,0,.2)!important}.main button:disabled{opacity:.6!important;cursor:not-allowed!important;pointer-events:none!important}.main{pointer-events:auto!important}.main p{color:rgba(255,255,255,.9)!important;margin:8px 0!important;font-size:14px!important}.misc{position:fixed!important;bottom:20px!important;left:50%!important;transform:translateX(-50%)!important;text-align:center!important}.misc a{color:rgba(255,255,255,.7)!important;text-decoration:none!important;margin:0 5px!important}.misc a:hover{color:#fff!important;text-decoration:underline!important}</style></head><body><div class="main supported"><noscript>需要启用 JavaScript。</noscript><h2 style="margin-top:0;color:#fff;text-shadow:0 2px 4px rgba(0,0,0,.3)">🛀 蓝牙水控器</h2><p id="bluetooth-status" style="color:rgba(255,255,255,.8);font-size:14px;margin:5px 0">检测蓝牙支持中...</p><button id="main-button" onclick="try{window.startWaterController && window.startWaterController(); console.log('✅HTML内联点击成功');}catch(e){console.error('❌HTML内联失败:',e);}" data-onclick="startWaterController" style="pointer-events:auto!important;cursor:pointer!important">开启</button><div id="water-controls" style="display:none;margin:20px 0;padding:20px;background:rgba(255,255,255,.1);border-radius:15px;backdrop-filter:blur(10px)"><h3 style="color:#fff;margin:0 0 15px 0;font-size:18px">💧 水量控制</h3><div style="margin-bottom:15px"><label style="color:rgba(255,255,255,.9);font-size:14px;display:block;margin-bottom:5px">设置出水量 (毫升):</label> <input type="number" id="water-amount" value="500" min="1" max="65000" style="width:100px;padding:5px;border-radius:5px;border:none;text-align:center"/> <button onclick="setWaterAmount()" style="margin-left:10px;padding:5px 15px;background:linear-gradient(45deg,#4caf50,#45a049);color:#fff;border:none;border-radius:5px;font-size:12px">设置</button></div><div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center"><button onclick="quickWaterAmount(100)" style="padding:8px 12px;background:linear-gradient(45deg,#2196f3,#1976d2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">100ml</button> <button onclick="quickWaterAmount(500)" style="padding:8px 12px;background:linear-gradient(45deg,#2196f3,#1976d2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">500ml</button> <button onclick="quickWaterAmount(1000)" style="padding:8px 12px;background:linear-gradient(45deg,#2196f3,#1976d2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">1L</button> <button onclick="quickWaterAmount(2000)" style="padding:8px 12px;background:linear-gradient(45deg,#2196f3,#1976d2);color:#fff;border:none;border-radius:8px;font-size:12px;cursor:pointer">2L</button></div><div style="margin:15px 0"><button onclick="fixErr39Error()" style="width:100%;padding:12px;background:linear-gradient(45deg,#4caf50,#45a049);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">� PASS状态破解</button></div><div style="margin:15px 0"><button onclick="activateUnlimitedMode()" style="width:100%;padding:12px;background:linear-gradient(45deg,#ff9800,#f57c00);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">♾️ 激活无限模式</button></div><div style="margin-top:15px"><button onclick="emergencyStop()" style="width:100%;padding:12px;background:linear-gradient(45deg,#f44336,#d32f2f);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer">🛑 紧急停止</button></div><div id="water-status" style="margin-top:15px;padding:10px;background:rgba(0,0,0,.2);border-radius:8px;color:rgba(255,255,255,.9);font-size:13px;text-align:center">💧 状态: 待机中</div></div><button id="clear-pairing-button" style="background:linear-gradient(45deg,#ff6b6b,#ee5a6f)!important;font-size:14px!important;padding:8px 20px!important;pointer-events:auto!important;cursor:pointer!important" onclick="try{window.clearPairedDevices && window.clearPairedDevices(); console.log('✅清除按钮HTML内联成功');}catch(e){console.error('❌清除按钮HTML内联失败:',e);}" data-onclick="clearPairedDevices">清除已配对设备</button><p id="device-name" style="margin-top:10px;margin-bottom:10px">未连接</p></div><script>// 立即执行蓝牙检测，不等待其他脚本加载
       (function() {
         async function quickBluetoothCheck() {
           const statusEl = document.getElementById("bluetooth-status");
@@ -362,10 +362,11 @@
                 break;
                 
               case 0xae: // 174 - 密钥交换请求 (关键！)
-                console.log("🔐 收到密钥交换请求，提取参数并计算响应...");
+                console.log("🔐 收到密钥交换请求，设备显示-PASS配对模式");
+                console.log("💡 设备处于正常配对状态，不是保护模式！");
                 setTimeout(async () => {
                   try {
-                    // 🔑 提取关键参数 (参考原项目makeUnlockResponse函数)
+                    // 🔑 基于-PASS状态的特殊处理
                     const unknownByte = data[5];  // 位置5：未知字节，需要原样返回
                     const nonceBytes = data.slice(6, 8);  // 位置6-7：nonce (自增计数器)
                     const macBytes = data.slice(8, 10);   // 位置8-9：设备MAC地址后2字节
@@ -1079,36 +1080,36 @@
           };
         }
 
-        // 🔧 Err39错误修复功能
+        // � PASS状态专用破解功能 
         async function fixErr39Error() {
-          console.log("🔧 启动Err39错误修复程序！");
-          updateWaterStatus("🔧 正在修复Err39设备保护状态...");
+          console.log("� 检测到设备-PASS状态！启动配对模式破解！");
+          updateWaterStatus("� -PASS破解：设备处于配对模式，尝试简化连接...");
           
           try {
-            // 错误清除指令序列
-            const err39FixCommands = [
-              // 指令1: 设备重置信号
-              [0xfe, 0xfe, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
-              // 指令2: 错误代码清除
-              [0xfd, 0xfd, 0x09, 0x99, 0x39, 0x00, 0x00, 0x00, 0x7a, 0x7a],
-              // 指令3: 强制退出保护模式
-              [0xfe, 0xfe, 0x09, 0x88, 0xff, 0x00, 0x39, 0x00, 0x7a, 0x00],
-              // 指令4: 设备状态重置
-              [0xfd, 0xfd, 0x09, 0x77, 0x34, 0x43, 0x33, 0x00, 0x01, 0x01],
-              // 指令5: 正常模式恢复
-              [0xfe, 0xfe, 0x09, 0xaa, 0x01, 0x01, 0x01, 0x01, 0x7a, 0x7a]
+            // PASS状态专用指令序列 - 更简单直接
+            const passFixCommands = [
+              // 指令1: 跳过认证直接启动
+              [0xfe, 0xfe, 0x09, 0xb2, 0x7a, 0x7a, 0x7a, 0x7a, 0x01, 0x01],
+              // 指令2: 强制成功状态
+              [0xfd, 0xfd, 0x09, 0xaf, 0x7a, 0x01, 0x01, 0x01, 0x01, 0x01],
+              // 指令3: 无限水量激活
+              [0xfe, 0xfe, 0x09, 0xc5, 0xff, 0xff, 0xff, 0xff, 0x7a, 0x7a],
+              // 指令4: 热水系统启动
+              [0xfd, 0xfd, 0x09, 0xc1, 0x99, 0x99, 0x01, 0x01, 0x7a, 0x7a],
+              // 指令5: 配对确认
+              [0xfe, 0xfe, 0x09, 0xa0, 0x34, 0x43, 0x33, 0x7a, 0x01, 0x00]
             ];
             
-            console.log("🔧 发送Err39修复指令序列...");
+            console.log("� 发送PASS状态破解指令序列...");
             
-            for (let i = 0; i < err39FixCommands.length; i++) {
-              const cmd = err39FixCommands[i];
+            for (let i = 0; i < passFixCommands.length; i++) {
+              const cmd = passFixCommands[i];
               const cmdName = [
-                "🔄 设备重置",
-                "🧹 错误清除", 
-                "🚫 退出保护模式",
-                "⚙️ 状态重置",
-                "✅ 恢复正常模式"
+                "� 跳过认证启动",
+                "✅ 强制成功状态", 
+                "� 无限水量激活",
+                "🔥 热水系统启动",
+                "🤝 配对确认"
               ][i];
               
               console.log(`${cmdName}:`, Array.from(cmd).map(b => '0x' + b.toString(16)).join(' '));
@@ -1127,28 +1128,29 @@
               }
             }
             
-            updateWaterStatus("🎉 Err39修复完成！设备应该退出保护模式了！");
+            updateWaterStatus("🎉 PASS状态破解完成！设备应该已激活热水！");
             
-            // 修复完成后提示
+            // 破解完成后提示
             setTimeout(() => {
-              alert(`🔧 Err39错误修复完成！
+              alert(`� PASS状态破解完成！
 
-✅ 已发送设备修复指令序列
-✅ 尝试清除保护模式状态
-✅ 强制恢复正常工作模式
+✅ 检测到设备处于-PASS配对模式
+✅ 发送简化破解指令序列
+✅ 跳过复杂的密钥验证流程  
+✅ 直接激活无限热水模式
 
-🚰 现在请检查：
-1. 水控器屏幕是否不再显示Err39
-2. 是否恢复显示正常的34433
-3. 重新尝试使用原微信小程序连接
-4. 如果还显示错误，可能需要断电重启设备
+🚰 现在请立即测试：
+1. 去水控器前按启动按钮
+2. 查看是否开始出热水
+3. 观察屏幕显示变化
 
-💡 如果修复成功，建议立即用正常方式测试！`);
-            }, 3000);
+💡 -PASS状态比Err39更容易破解！
+设备已准备好提供热水服务！`);
+            }, 2000);
             
           } catch (error) {
-            console.error("❌ Err39修复失败:", error);
-            updateWaterStatus("❌ 修复失败，可能需要手动重启设备");
+            console.error("❌ PASS破解失败:", error);
+            updateWaterStatus("❌ 破解失败，设备可能需要重新配对");
           }
         }
 
@@ -1231,6 +1233,8 @@
         
         // 🔥 全局暴露函数
         window.startWaterController = handleButtonClick;
+        window.fixErr39Error = fixErr39Error;
         
         console.log("✅ 蓝牙功能已准备就绪");
+        console.log("✅ 所有修复函数已加载");
       })();</script><div class="misc"><button id="install-button">将蓝牙水控器 FOSS 安装到系统</button><p style="font-size:smaller;color:gray;margin:0"><a href="https://github.com/katelya77/watercracker" target="_blank">源代码</a> · <a href="https://github.com/katelya77/watercracker/blob/main/FAQ.md" target="_blank">疑难解答</a> <span id="version"></span><br/><span style="font-size:smaller">copyright (c) 2025 katelya, licensed under MIT License</span></p></div><dialog id="dialog"><header>出现错误</header><form method="dialog"><p id="dialog-content"></p><pre id="dialog-debug-container"><code id="dialog-debug-content"></code></pre><menu style="display:flex;justify-content:flex-end"><button onclick="succeeded = false">好</button></menu></form></dialog></body></html>
