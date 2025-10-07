@@ -66,11 +66,27 @@
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2) !important;
         margin: 10px 0 !important;
+        pointer-events: auto !important;
+        user-select: none !important;
+        -webkit-user-select: none !important;
+        -webkit-tap-highlight-color: transparent !important;
       }
 
       .main button:hover {
         transform: translateY(-2px) !important;
         box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3) !important;
+        background: linear-gradient(45deg, #5a8ff0, #8959b8) !important;
+      }
+
+      .main button:active {
+        transform: translateY(0px) !important;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+      }
+
+      .main button:disabled {
+        opacity: 0.6 !important;
+        cursor: not-allowed !important;
+        pointer-events: none !important;
       }
 
       .main p {
@@ -105,14 +121,14 @@
       <noscript>需要启用 JavaScript。</noscript>
       <h2 style="margin-top: 0; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🛀 蓝牙水控器</h2>
       <p id="bluetooth-status" style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 5px 0;">检测蓝牙支持中...</p>
-      <button id="main-button" style="margin: 10px 0%">开启</button>
+      <button id="main-button">开启</button>
       <p id="device-name" style="margin-top: 10px; margin-bottom: 10px">未连接</p>
     </div>
     
     <script>
       // 立即执行蓝牙检测，不等待其他脚本加载
       (function() {
-        function quickBluetoothCheck() {
+        async function quickBluetoothCheck() {
           const statusEl = document.getElementById("bluetooth-status");
           if (!statusEl) {
             setTimeout(quickBluetoothCheck, 50);
@@ -120,27 +136,64 @@
           }
           
           try {
-            if (typeof navigator !== 'undefined' && 'bluetooth' in navigator && navigator.bluetooth) {
-              statusEl.innerHTML = "✅ 浏览器支持蓝牙功能";
-              statusEl.style.color = "rgba(144, 238, 144, 0.9)";
-              console.log("快速蓝牙检测：支持");
-            } else {
-              statusEl.innerHTML = "⚠️ 浏览器不支持蓝牙，功能可能受限";
-              statusEl.style.color = "rgba(255, 182, 193, 0.9)";
-              console.log("快速蓝牙检测：不支持");
+            // 更严格的蓝牙检测
+            if (typeof navigator === 'undefined' || !navigator.bluetooth) {
+              statusEl.innerHTML = "❌ 浏览器不支持蓝牙 API";
+              statusEl.style.color = "rgba(255, 99, 71, 0.9)";
+              console.log("快速蓝牙检测：不支持（API不存在）");
+              return;
+            }
+
+            // 测试蓝牙API是否真正可用
+            try {
+              const availability = await navigator.bluetooth.getAvailability();
+              
+              if (availability) {
+                statusEl.innerHTML = "✅ 蓝牙功能可用";
+                statusEl.style.color = "rgba(144, 238, 144, 0.9)";
+                console.log("快速蓝牙检测：可用");
+              } else {
+                statusEl.innerHTML = "⚠️ 蓝牙硬件不可用或未开启";
+                statusEl.style.color = "rgba(255, 215, 0, 0.9)";
+                console.log("快速蓝牙检测：硬件不可用");
+              }
+            } catch (err) {
+              statusEl.innerHTML = "⚠️ 浏览器支持蓝牙，但无法检测硬件状态";
+              statusEl.style.color = "rgba(255, 215, 0, 0.9)";
+              console.log("快速蓝牙检测：API存在但无法检测硬件");
             }
           } catch (error) {
             statusEl.innerHTML = "❌ 蓝牙检测出错";
-            statusEl.style.color = "rgba(255, 182, 193, 0.9)";
+            statusEl.style.color = "rgba(255, 99, 71, 0.9)";
             console.error("快速蓝牙检测错误:", error);
+          }
+        }
+        
+        // 添加临时调试功能，帮助检测按钮点击
+        function setupDebugClick() {
+          const btn = document.getElementById("main-button");
+          if (btn) {
+            console.log("🔍 调试：找到按钮元素", btn);
+            btn.addEventListener("click", function(e) {
+              console.log("🔍 调试：按钮被点击！", e);
+              console.log("🔍 调试：按钮disabled状态:", this.disabled);
+              console.log("🔍 调试：按钮样式:", window.getComputedStyle(this));
+            }, true); // 使用捕获阶段，优先级更高
+          } else {
+            console.log("🔍 调试：未找到按钮元素，将重试...");
+            setTimeout(setupDebugClick, 100);
           }
         }
         
         // DOM加载完成后立即检测
         if (document.readyState === "loading") {
-          document.addEventListener("DOMContentLoaded", quickBluetoothCheck);
+          document.addEventListener("DOMContentLoaded", function() {
+            quickBluetoothCheck();
+            setupDebugClick();
+          });
         } else {
           quickBluetoothCheck();
+          setupDebugClick();
         }
       })();
     </script>

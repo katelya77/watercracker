@@ -12,11 +12,10 @@ Sentry.init({
 (document.getElementById("version") as HTMLSpanElement).innerText = " · v" + VERSION;
 
 // 检测蓝牙支持并显示状态
-function checkBluetoothStatus() {
+async function checkBluetoothStatus() {
   const statusEl = document.getElementById("bluetooth-status");
   if (!statusEl) {
     console.log("未找到蓝牙状态元素，将重试...");
-    // 如果元素还没找到，延时重试
     setTimeout(checkBluetoothStatus, 200);
     return;
   }
@@ -24,20 +23,37 @@ function checkBluetoothStatus() {
   console.log("开始检测蓝牙支持...");
   
   try {
-    // 检查浏览器蓝牙API可用性
-    if (typeof navigator !== 'undefined' && 'bluetooth' in navigator) {
-      statusEl.innerHTML = "✅ 浏览器支持蓝牙功能";
+    // 更严格的蓝牙检测：不仅检查API存在，还要测试实际可用性
+    if (typeof navigator === 'undefined' || !navigator.bluetooth) {
+      statusEl.innerHTML = "❌ 浏览器不支持蓝牙 API";
+      statusEl.style.color = "rgba(255, 99, 71, 0.9)";
+      console.log("蓝牙支持检测完成：不支持（API不存在）");
+      return;
+    }
+
+    // 测试蓝牙API是否真正可用
+    const availability = await navigator.bluetooth.getAvailability();
+    
+    if (availability) {
+      statusEl.innerHTML = "✅ 蓝牙功能可用";
       statusEl.style.color = "rgba(144, 238, 144, 0.9)";
-      console.log("蓝牙支持检测完成：支持");
+      console.log("蓝牙支持检测完成：可用");
     } else {
-      statusEl.innerHTML = "⚠️ 浏览器不支持蓝牙，功能可能受限";
-      statusEl.style.color = "rgba(255, 182, 193, 0.9)";
-      console.log("蓝牙支持检测完成：不支持");
+      statusEl.innerHTML = "⚠️ 蓝牙硬件不可用或未开启";
+      statusEl.style.color = "rgba(255, 215, 0, 0.9)";
+      console.log("蓝牙支持检测完成：硬件不可用");
     }
   } catch (error) {
-    statusEl.innerHTML = "❌ 蓝牙检测出错";
-    statusEl.style.color = "rgba(255, 182, 193, 0.9)";
-    console.error("蓝牙检测错误:", error);
+    // 如果 getAvailability 不支持，至少确认API存在
+    if (navigator.bluetooth) {
+      statusEl.innerHTML = "⚠️ 浏览器支持蓝牙，但无法检测硬件状态";
+      statusEl.style.color = "rgba(255, 215, 0, 0.9)";
+      console.log("蓝牙支持检测完成：API存在但无法检测硬件");
+    } else {
+      statusEl.innerHTML = "❌ 蓝牙检测出错";
+      statusEl.style.color = "rgba(255, 99, 71, 0.9)";
+      console.error("蓝牙检测错误:", error);
+    }
   }
 }
 
@@ -60,23 +76,28 @@ function initialize() {
     console.log("主界面已显示");
   }
   
-  // 延时检查蓝牙状态，确保DOM完全加载
-  setTimeout(checkBluetoothStatus, 50);
+  // 执行蓝牙检测
+  checkBluetoothStatus();
   
-  // 绑定按钮事件
+  // 绑定按钮事件 - 使用更可靠的方法
   const mainButton = document.getElementById("main-button") as HTMLButtonElement;
   if (mainButton) {
-    mainButton.addEventListener("click", handleButtonClick);
+    // 移除可能存在的旧事件监听器
+    const newButton = mainButton.cloneNode(true) as HTMLButtonElement;
+    mainButton.parentNode?.replaceChild(newButton, mainButton);
+    
+    // 绑定新的事件监听器
+    newButton.addEventListener("click", handleButtonClick, { passive: false });
+    
+    // 确保按钮样式正确
+    newButton.style.pointerEvents = "auto";
+    newButton.style.cursor = "pointer";
+    
     console.log("按钮事件已绑定");
+    console.log("按钮元素:", newButton);
+    console.log("按钮disabled状态:", newButton.disabled);
   } else {
-    console.log("未找到主按钮，将重试...");
-    setTimeout(() => {
-      const retryButton = document.getElementById("main-button") as HTMLButtonElement;
-      if (retryButton) {
-        retryButton.addEventListener("click", handleButtonClick);
-        console.log("按钮事件已绑定（重试成功）");
-      }
-    }, 100);
+    console.error("❌ 未找到主按钮元素！");
   }
   
   isInitialized = true;
