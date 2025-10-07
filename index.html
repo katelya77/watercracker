@@ -669,7 +669,10 @@
                   isStarted = false;
                   txdCharacteristic = null;
                   rxdCharacteristic = null;
-                    console.log("�️ 开始隐秘破解模式...");
+                  
+                  // 延迟30秒后尝试隐秘破解
+                  setTimeout(async () => {
+                    console.log("🕵️ 开始隐秘破解模式...");
                     console.log("💡 模拟正常重连，避免触发保护机制");
                     
                     // 发送一个正常的重连握手，而不是攻击
@@ -771,15 +774,6 @@
           } catch (error) {
             console.error("数据处理错误:", error);
             handleBluetoothError(error);
-                    // 温和激活，15秒后再开始
-                    setTimeout(() => {
-                      console.log("✅ 冷却完成，准备温和破解");
-                      console.log("🚀 开始超温和破解");
-                      updateWaterStatus("🚀 开始温和破解...");
-                      if (window.activateUnlimitedMode) {
-                        window.activateUnlimitedMode();
-                      }
-                    }, 15000);
           }
         }
         
