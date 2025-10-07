@@ -106,6 +106,10 @@ export class ProtocolAdapter {
         log("V1协议：处理0xaf认证包");
         return false; // 让原有逻辑处理认证响应
       
+      case 0xb2: // 🔧 关键修复：启动成功响应
+        log("V1协议：收到0xb2启动成功响应，通知原有逻辑处理");
+        return false; // 让原有逻辑处理启动成功并更新UI
+      
       case 0x7a: // 新的认证步骤（仅在某些新固件中出现）
         return await this.handleNewAuthStep(payload, txdCharacteristic);
       

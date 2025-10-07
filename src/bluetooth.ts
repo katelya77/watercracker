@@ -152,7 +152,15 @@ async function handleRxdNotifications(event: Event) {
             break;
           case 0x7A: // 🔥 新固件：新的认证成功响应码
             log("检测到新固件0xaf包中的0x7a响应，继续发送start epilogue");
-            await txdCharacteristic.writeValue(makeStartEpilogue(bluetoothDevice.name!, true) as BufferSource);
+            // NEW_V1固件需要更长延迟
+            setTimeout(async () => {
+              try {
+                await txdCharacteristic.writeValue(makeStartEpilogue(bluetoothDevice.name!, true) as BufferSource);
+                log("NEW_V1固件：已发送start epilogue，等待0xb2响应");
+              } catch (error) {
+                log("NEW_V1固件：发送start epilogue失败: " + error);
+              }
+            }, 800); // 增加到800ms延迟
             break;
           case 0x01: // key authentication failed; "err41" (bad key)
           case 0x02: // ?
@@ -166,6 +174,7 @@ async function handleRxdNotifications(event: Event) {
         }
         break;
       case 0xB2: // start ok; update ui
+        log("🎉 收到0xB2启动成功响应！水控器已激活");
         clearTimeout(pendingStartEpilogue);
         clearTimeout(pendingTimeoutMessage);
         isStarted = true;
@@ -199,7 +208,7 @@ function setupTimeoutMessage() {
   if (!pendingTimeoutMessage) {
     pendingTimeoutMessage = setTimeout(() => {
       handleBluetoothError("WATERCTL INTERNAL Operation timed out");
-    }, 15000);
+    }, 25000); // 增加到25秒，给NEW_V1固件更多时间
   }
 }
 
