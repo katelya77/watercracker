@@ -423,8 +423,13 @@
                 break;
                 
               case 0xaf: // 175 - 认证响应
-                console.log("🔒 收到认证包，状态码:", data[5] ? '0x' + data[5].toString(16) : '未知');
-                if (data.length > 5 && data[5] === 0x7a) {
+                console.log("🔒 收到认证包，完整数据:", Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                console.log("🔍 关键位置检查:");
+                console.log("  位置4 (应该是状态):", data[4] ? '0x' + data[4].toString(16) : '无');
+                console.log("  位置5:", data[5] ? '0x' + data[5].toString(16) : '无');
+                
+                // 🔥 关键修复：位置4应该是认证状态码
+                if (data.length > 4 && data[4] === 0x7a) {
                   // 0x7a 表示认证成功，发送最终启动确认
                   console.log("✅ 认证成功 (0x7a)，发送启动确认...");
                   setTimeout(async () => {
