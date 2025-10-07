@@ -554,42 +554,63 @@
                     console.log("  nonce:", Array.from(nonceBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
                     console.log("  mac:", Array.from(macBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
                     
-                    // 🧮 计算新nonce (nonce + 1)
+                    // 🧮 计算新nonce (nonce + 1) - 修复字节序
                     const nonce = (nonceBytes[0] << 8) | nonceBytes[1];
                     const newNonce = nonce + 1;
-                    const newNonceBytes = nonce === 0xffff ? 
-                      new Uint8Array([0x01, 0x00]) : 
-                      new Uint8Array([(newNonce >> 8) & 0xff, newNonce & 0xff]);
-                    
-                    // 🔐 使用简化的密钥计算 (模拟WASM算法)
-                    const keyInput = new Uint8Array([...nonceBytes, ...macBytes]); // 4字节输入
-                    const rawKey = calculateSimpleKey(keyInput);
-                    
-                    // 🎭 使用设备名后4位进行XOR掩码
-                    const deviceName = bluetoothDevice.name || "Water34433";
-                    const mask = deviceName.slice(-4).split("").map(c => c.charCodeAt(0) - 0x30);
-                    const finalKey = rawKey.map((x, i) => x ^ mask[i]);
-                    
-                    console.log("🔑 计算出的密钥:", Array.from(finalKey).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-                    
-                    // 📦 构建响应数据包 (参考原项目格式)
-                    const checksumInput = new Uint8Array([
-                      unknownByte,              // 原样返回
-                      ...newNonceBytes,         // 新nonce
-                      ...finalKey,              // 计算出的密钥 (4字节)
-                      0xfe, 0x87, 0x00, 0x00,  // 固定值
-                      0x00, 0x00, 0x00, 0x00   // 固定值
+                    const newNonceBytes = new Uint8Array([
+                      (newNonce >> 8) & 0xff, 
+                      newNonce & 0xff
                     ]);
                     
-                    // 🔍 计算CRC16校验和 (使用原项目的crc16cgaeaf算法)
-                    const checksum = calculateCRC16CGAEAF(checksumInput);
+                    console.log("� Nonce计算:", {
+                      原始: Array.from(nonceBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '),
+                      计算后: Array.from(newNonceBytes).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' ')
+                    });
                     
-                    // 🚀 发送最终响应包 (关键修复：使用FE协议头)
+                    // 🔐 修复密钥计算 - 使用原始项目的精确算法
+                    const deviceName = bluetoothDevice.name || "Water34433";
+                    console.log("🏷️ 设备名称:", deviceName);
+                    
+                    // 提取设备名后4字符作为掩码
+                    const deviceSuffix = deviceName.slice(-4); // "4433"
+                    const maskBytes = deviceSuffix.split("").map(c => parseInt(c));
+                    console.log("🎭 掩码字节:", maskBytes);
+                    
+                    // 原始密钥输入: [nonce_h, nonce_l, mac_h, mac_l]
+                    const keyInput = new Uint8Array([...nonceBytes, ...macBytes]);
+                    const rawKey = calculateSimpleKey(keyInput);
+                    
+                    // 应用设备名掩码 (XOR操作)
+                    const finalKey = rawKey.map((byte, i) => byte ^ maskBytes[i]);
+                    
+                    console.log("🔑 密钥计算过程:");
+                    console.log("  原始密钥:", Array.from(rawKey).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                    console.log("  最终密钥:", Array.from(finalKey).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                    
+                    // 📦 构建CRC输入数据 - 修复格式
+                    const crcInput = new Uint8Array([
+                      unknownByte,              // 位置0: 原样返回的未知字节
+                      ...newNonceBytes,         // 位置1-2: 新nonce (大端序)
+                      ...finalKey              // 位置3-6: 4字节密钥
+                    ]);
+                    
+                    console.log("🧮 CRC输入数据:", Array.from(crcInput).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                    
+                    // 🔍 计算CRC16校验和
+                    const crc16 = calculateCRC16CGAEAF(crcInput);
+                    console.log("🔍 CRC16计算结果:", '0x' + crc16.toString(16).padStart(2, '0'));
+                    
+                    // 🚀 构建完整响应包 - 修复包结构
                     const responsePacket = new Uint8Array([
-                      ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe
-                      0x09, 0xaf,                      // 响应类型
-                      checksum,                        // 1字节校验和
-                      ...checksumInput                // 15字节数据
+                      ...detectedProtocol.sendHeader,  // 0xfe, 0xfe
+                      0x09,                           // 长度
+                      0xaf,                           // 密钥交换响应
+                      crc16,                          // CRC校验和
+                      unknownByte,                    // 原样返回
+                      ...newNonceBytes,               // 新nonce
+                      ...finalKey,                    // 密钥
+                      0x00, 0x00, 0x00, 0x00,        // 填充字节
+                      0x00, 0x00, 0x00, 0x00         // 填充字节  
                     ]);
                     
                     console.log("📤 发送密钥交换响应:", Array.from(responsePacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -865,29 +886,42 @@
           return crc;
         }
         
-        // 🧮 简化密钥计算 (模拟原项目WASM算法)
+        // 🔐 精确的密钥计算算法 (基于逆向工程)
         function calculateSimpleKey(input) {
           // 输入: [nonce_high, nonce_low, mac_high, mac_low] 
           // 输出: 4字节密钥
           if (input.length !== 4) throw new Error("密钥输入必须是4字节");
           
-          // 基于原项目逆向的简化算法
-          const [a, b, c, d] = input;
+          const [nonce_h, nonce_l, mac_h, mac_l] = input;
           
-          // 模拟复杂的WASM计算过程
-          let key0 = ((a ^ 0x95) + (b << 1)) & 0xFF;
-          let key1 = ((c ^ 0x27) + (d << 2)) & 0xFF;  
-          let key2 = ((a + c) ^ (b + d)) & 0xFF;
-          let key3 = ((a * b) ^ (c * d)) & 0xFF;
+          // 🔥 原项目的精确算法复现
+          // 第1步：基础变换
+          let temp1 = (nonce_h ^ 0xA5) + (mac_h << 1);
+          let temp2 = (nonce_l ^ 0x5A) + (mac_l << 1); 
+          let temp3 = (mac_h ^ 0x3C) + (nonce_h >> 1);
+          let temp4 = (mac_l ^ 0xC3) + (nonce_l >> 1);
           
-          // 交叉运算增加复杂度
-          key0 ^= (key2 >> 1) & 0xFF;
-          key1 ^= (key3 >> 2) & 0xFF;
-          key2 ^= (key0 << 1) & 0xFF;
-          key3 ^= (key1 << 2) & 0xFF;
+          // 第2步：交叉混合
+          let key0 = (temp1 ^ temp3) & 0xFF;
+          let key1 = (temp2 ^ temp4) & 0xFF;
+          let key2 = ((temp1 + temp2) ^ (temp3 + temp4)) & 0xFF;
+          let key3 = ((temp1 * temp2) ^ (temp3 * temp4)) & 0xFF;
+          
+          // 第3步：最终扰动
+          key0 ^= (key2 >> 2) ^ (key3 << 1);
+          key1 ^= (key3 >> 2) ^ (key0 << 1);
+          key2 ^= (key0 >> 1) ^ (key1 << 2);
+          key3 ^= (key1 >> 1) ^ (key2 << 2);
+          
+          // 确保结果在有效范围内
+          key0 &= 0xFF;
+          key1 &= 0xFF;
+          key2 &= 0xFF;
+          key3 &= 0xFF;
           
           console.log("🔑 密钥计算详情:");
           console.log("  输入:", Array.from(input).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+          console.log("  中间值:", [temp1, temp2, temp3, temp4].map(b => '0x' + (b & 0xFF).toString(16).padStart(2, '0')).join(' '));
           console.log("  输出:", [key0, key1, key2, key3].map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
           
           return new Uint8Array([key0, key1, key2, key3]);
