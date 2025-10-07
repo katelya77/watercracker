@@ -132,8 +132,16 @@
       <noscript>需要启用 JavaScript。</noscript>
       <h2 style="margin-top: 0; color: white; text-shadow: 0 2px 4px rgba(0,0,0,0.3);">🛀 蓝牙水控器</h2>
       <p id="bluetooth-status" style="color: rgba(255,255,255,0.8); font-size: 14px; margin: 5px 0;">检测蓝牙支持中...</p>
-      <button id="main-button" onclick="window.startWaterController && window.startWaterController(); console.log('HTML内联点击事件触发');">开启</button>
-      <button id="clear-pairing-button" style="background: linear-gradient(45deg, #ff6b6b, #ee5a6f) !important; font-size: 14px !important; padding: 8px 20px !important;" onclick="window.clearPairedDevices && window.clearPairedDevices(); console.log('清除按钮HTML内联事件触发');">清除已配对设备</button>
+      <button 
+        id="main-button" 
+        onclick="try{window.startWaterController && window.startWaterController(); console.log('✅HTML内联点击成功');}catch(e){console.error('❌HTML内联失败:',e);}"
+        data-onclick="startWaterController"
+        style="pointer-events: auto !important; cursor: pointer !important;">开启</button>
+      <button 
+        id="clear-pairing-button" 
+        style="background: linear-gradient(45deg, #ff6b6b, #ee5a6f) !important; font-size: 14px !important; padding: 8px 20px !important; pointer-events: auto !important; cursor: pointer !important;" 
+        onclick="try{window.clearPairedDevices && window.clearPairedDevices(); console.log('✅清除按钮HTML内联成功');}catch(e){console.error('❌清除按钮HTML内联失败:',e);}"
+        data-onclick="clearPairedDevices">清除已配对设备</button>
       <p id="device-name" style="margin-top: 10px; margin-bottom: 10px">未连接</p>
     </div>
     
@@ -181,7 +189,110 @@
           }
         }
         
-        // 添加临时调试功能，帮助检测按钮点击
+        // 🚀 立即强制绑定按钮事件 - 解决所有按钮问题
+        function forceButtonBinding() {
+          console.log("🚀 开始强制按钮绑定...");
+          
+          // 强制主按钮绑定
+          const mainBtn = document.getElementById("main-button");
+          if (mainBtn) {
+            console.log("✅ 找到主按钮，开始强制绑定");
+            
+            // 确保按钮可点击
+            mainBtn.style.pointerEvents = "auto";
+            mainBtn.style.cursor = "pointer";
+            mainBtn.disabled = false;
+            
+            // 强制点击处理器
+            const mainClickHandler = function(e) {
+              console.log("🎯 主按钮强制点击处理器触发！", e.type);
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // 显示用户反馈
+              this.textContent = "连接中...";
+              this.disabled = true;
+              
+              // 模拟蓝牙连接（临时方案，真正的函数会在主脚本加载后覆盖）
+              setTimeout(() => {
+                if (window.startWaterController) {
+                  window.startWaterController();
+                } else {
+                  console.log("⚠️ 主脚本未加载，使用临时处理");
+                  alert("正在初始化蓝牙功能，请稍后重试...");
+                  this.textContent = "开启";
+                  this.disabled = false;
+                }
+              }, 100);
+            };
+            
+            // 多重事件绑定
+            mainBtn.onclick = mainClickHandler;
+            mainBtn.addEventListener("click", mainClickHandler, true);
+            mainBtn.addEventListener("mousedown", mainClickHandler, true);
+            console.log("✅ 主按钮强制绑定完成");
+          }
+          
+          // 强制清除按钮绑定
+          const clearBtn = document.getElementById("clear-pairing-button");
+          if (clearBtn) {
+            console.log("✅ 找到清除按钮，开始强制绑定");
+            
+            // 确保按钮可点击
+            clearBtn.style.pointerEvents = "auto";
+            clearBtn.style.cursor = "pointer";
+            clearBtn.disabled = false;
+            
+            // 强制点击处理器
+            const clearClickHandler = function(e) {
+              console.log("🧹 清除按钮强制点击处理器触发！", e.type);
+              e.preventDefault();
+              e.stopPropagation();
+              
+              // 显示用户反馈
+              this.textContent = "清除中...";
+              this.disabled = true;
+              
+              // 使用内联的清除逻辑（临时方案）
+              setTimeout(async () => {
+                try {
+                  if (window.clearPairedDevices) {
+                    await window.clearPairedDevices();
+                  } else {
+                    console.log("⚠️ 主脚本未加载，使用内联清除逻辑");
+                    
+                    if (!navigator.bluetooth || !navigator.bluetooth.getDevices) {
+                      alert("您的浏览器不支持获取已配对设备\n\n请使用Chrome最新版本并启用实验性功能");
+                    } else {
+                      const devices = await navigator.bluetooth.getDevices();
+                      if (devices.length === 0) {
+                        alert("没有已配对的蓝牙设备");
+                      } else {
+                        alert(`找到 ${devices.length} 个设备，功能正在加载中...`);
+                      }
+                    }
+                    
+                    this.textContent = "清除已配对设备";
+                    this.disabled = false;
+                  }
+                } catch (error) {
+                  console.error("清除设备错误:", error);
+                  alert("操作失败: " + error.message);
+                  this.textContent = "清除已配对设备";
+                  this.disabled = false;
+                }
+              }, 100);
+            };
+            
+            // 多重事件绑定
+            clearBtn.onclick = clearClickHandler;
+            clearBtn.addEventListener("click", clearClickHandler, true);
+            clearBtn.addEventListener("mousedown", clearClickHandler, true);
+            console.log("✅ 清除按钮强制绑定完成");
+          }
+        }
+        
+        // 添加调试功能，帮助检测按钮点击
         function setupDebugClick() {
           const btn = document.getElementById("main-button");
           if (btn) {
@@ -197,14 +308,18 @@
           }
         }
         
-        // DOM加载完成后立即检测
+        // DOM加载完成后立即执行所有初始化
         if (document.readyState === "loading") {
           document.addEventListener("DOMContentLoaded", function() {
+            console.log("🚀 DOM加载完成，开始初始化...");
             quickBluetoothCheck();
+            forceButtonBinding();
             setupDebugClick();
           });
         } else {
+          console.log("🚀 DOM已就绪，立即初始化...");
           quickBluetoothCheck();
+          forceButtonBinding();
           setupDebugClick();
         }
       })();
