@@ -209,21 +209,32 @@
               e.preventDefault();
               e.stopPropagation();
               
-              // 显示用户反馈
-              this.textContent = "连接中...";
-              this.disabled = true;
-              
-              // 模拟蓝牙连接（临时方案，真正的函数会在主脚本加载后覆盖）
-              setTimeout(() => {
+              // 直接调用全局函数，不要延迟
+              try {
                 if (window.startWaterController) {
+                  console.log("✅ 调用全局startWaterController函数");
                   window.startWaterController();
                 } else {
-                  console.log("⚠️ 主脚本未加载，使用临时处理");
-                  alert("正在初始化蓝牙功能，请稍后重试...");
-                  this.textContent = "开启";
-                  this.disabled = false;
+                  console.log("❌ 全局函数未准备好，等待加载...");
+                  // 等待函数加载，最多尝试3秒
+                  let attempts = 0;
+                  const checkInterval = setInterval(() => {
+                    attempts++;
+                    if (window.startWaterController) {
+                      console.log("✅ 延迟调用全局函数成功");
+                      clearInterval(checkInterval);
+                      window.startWaterController();
+                    } else if (attempts > 30) { // 30 * 100ms = 3秒
+                      clearInterval(checkInterval);
+                      console.log("⚠️ 函数加载超时，请刷新页面");
+                      alert("蓝牙功能加载中，请稍等片刻后重试，或刷新页面");
+                    }
+                  }, 100);
                 }
-              }, 100);
+              } catch (error) {
+                console.error("按钮点击处理出错:", error);
+                alert("蓝牙功能启动失败: " + error.message);
+              }
             };
             
             // 多重事件绑定
@@ -325,7 +336,7 @@
       })();
     </script>
     <div class="misc">
-      <button id="install-button" hidden>将蓝牙水控器 FOSS 安装到系统</button>
+      <button id="install-button">将蓝牙水控器 FOSS 安装到系统</button>
       <p style="font-size: smaller; color: gray; margin: 0%">
         <a href="https://github.com/katelya77/watercracker" target="_blank">源代码</a> ·
         <a href="https://github.com/katelya77/watercracker/blob/main/FAQ.md" target="_blank">疑难解答</a>

@@ -15,11 +15,41 @@ declare global {
 
 window.startWaterController = function() {
   console.log("🚀 全局函数被调用：启动水控器");
+  
+  // 更新按钮状态
+  const mainButton = document.getElementById("main-button") as HTMLButtonElement;
+  if (mainButton) {
+    mainButton.textContent = "连接中...";
+    mainButton.disabled = true;
+  }
+  
   try {
+    console.log("✅ 调用handleButtonClick函数");
     handleButtonClick();
   } catch (error) {
-    console.error("启动水控器失败:", error);
-    alert("启动失败: " + error);
+    console.error("🔥 启动水控器失败:", error);
+    
+    // 恢复按钮状态
+    if (mainButton) {
+      mainButton.textContent = "开启";
+      mainButton.disabled = false;
+    }
+    
+    // 提供详细的错误信息
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    if (errorMessage.includes("navigator.bluetooth")) {
+      alert(`🚫 蓝牙API不可用
+
+🔧 解决方案：
+1️⃣ 确保使用Chrome、Edge或Firefox最新版本
+2️⃣ 检查网站是否使用HTTPS协议
+3️⃣ 在Chrome中启用蓝牙实验性功能
+4️⃣ 重启浏览器后重试
+
+当前错误：${errorMessage}`);
+    } else {
+      alert("启动失败: " + errorMessage);
+    }
   }
 };
 
