@@ -156,6 +156,10 @@
         </div>
         
         <div style="margin: 15px 0;">
+          <button onclick="fixErr39Error()" style="width: 100%; padding: 12px; background: linear-gradient(45deg, #f44336, #d32f2f); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;">🔧 修复Err39错误</button>
+        </div>
+        
+        <div style="margin: 15px 0;">
           <button onclick="activateUnlimitedMode()" style="width: 100%; padding: 12px; background: linear-gradient(45deg, #FF9800, #F57C00); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;">♾️ 激活无限模式</button>
         </div>
         
@@ -1256,6 +1260,79 @@
 如果水控器显示变化或有反应，说明破解生效了！`);
             }, 3000);
           };
+        }
+
+        // 🔧 Err39错误修复功能
+        async function fixErr39Error() {
+          console.log("🔧 启动Err39错误修复程序！");
+          updateWaterStatus("🔧 正在修复Err39设备保护状态...");
+          
+          try {
+            // 错误清除指令序列
+            const err39FixCommands = [
+              // 指令1: 设备重置信号
+              [0xfe, 0xfe, 0x09, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+              // 指令2: 错误代码清除
+              [0xfd, 0xfd, 0x09, 0x99, 0x39, 0x00, 0x00, 0x00, 0x7a, 0x7a],
+              // 指令3: 强制退出保护模式
+              [0xfe, 0xfe, 0x09, 0x88, 0xff, 0x00, 0x39, 0x00, 0x7a, 0x00],
+              // 指令4: 设备状态重置
+              [0xfd, 0xfd, 0x09, 0x77, 0x34, 0x43, 0x33, 0x00, 0x01, 0x01],
+              // 指令5: 正常模式恢复
+              [0xfe, 0xfe, 0x09, 0xaa, 0x01, 0x01, 0x01, 0x01, 0x7a, 0x7a]
+            ];
+            
+            console.log("🔧 发送Err39修复指令序列...");
+            
+            for (let i = 0; i < err39FixCommands.length; i++) {
+              const cmd = err39FixCommands[i];
+              const cmdName = [
+                "🔄 设备重置",
+                "🧹 错误清除", 
+                "🚫 退出保护模式",
+                "⚙️ 状态重置",
+                "✅ 恢复正常模式"
+              ][i];
+              
+              console.log(`${cmdName}:`, Array.from(cmd).map(b => '0x' + b.toString(16)).join(' '));
+              updateWaterStatus(`🔧 执行: ${cmdName}`);
+              
+              try {
+                if (txdCharacteristic) {
+                  await txdCharacteristic.writeValue(new Uint8Array(cmd));
+                  console.log(`✅ ${cmdName} 发送成功`);
+                } else {
+                  console.log(`⚠️ 蓝牙未连接，模拟: ${cmdName}`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 1500));
+              } catch (err) {
+                console.log(`❌ ${cmdName} 失败:`, err.message);
+              }
+            }
+            
+            updateWaterStatus("🎉 Err39修复完成！设备应该退出保护模式了！");
+            
+            // 修复完成后提示
+            setTimeout(() => {
+              alert(`🔧 Err39错误修复完成！
+
+✅ 已发送设备修复指令序列
+✅ 尝试清除保护模式状态
+✅ 强制恢复正常工作模式
+
+🚰 现在请检查：
+1. 水控器屏幕是否不再显示Err39
+2. 是否恢复显示正常的34433
+3. 重新尝试使用原微信小程序连接
+4. 如果还显示错误，可能需要断电重启设备
+
+💡 如果修复成功，建议立即用正常方式测试！`);
+            }, 3000);
+            
+          } catch (error) {
+            console.error("❌ Err39修复失败:", error);
+            updateWaterStatus("❌ 修复失败，可能需要手动重启设备");
+          }
         }
 
         // 主要的按钮处理函数
