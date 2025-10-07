@@ -284,19 +284,36 @@
           showDetailedError("蓝牙连接错误", error, debugInfo);
         }
         
-        // 检测协议版本并返回相应的协议头
+        // 🔥 修复协议检测：设备回复FD但我们要发送FE
         function detectProtocolHeader(data) {
           if (data.length >= 2) {
             if (data[0] === 0xfd && data[1] === 0xfd) {
-              return { header: [0xfd, 0xfd], version: 'NEW_V2' };
+              // 设备使用FD回复，但我们发送时要用FE
+              return { 
+                sendHeader: [0xfe, 0xfe],    // 发送用FE
+                receiveHeader: [0xfd, 0xfd], // 接收是FD
+                version: 'MIXED_PROTOCOL' 
+              };
             } else if (data[0] === 0xfe && data[1] === 0xfe) {
-              return { header: [0xfe, 0xfe], version: 'NEW_V1' };
+              return { 
+                sendHeader: [0xfe, 0xfe], 
+                receiveHeader: [0xfe, 0xfe], 
+                version: 'NEW_V1' 
+              };
             }
           }
-          return { header: [0xfe, 0xfe], version: 'UNKNOWN' };
+          return { 
+            sendHeader: [0xfe, 0xfe], 
+            receiveHeader: [0xfe, 0xfe], 
+            version: 'UNKNOWN' 
+          };
         }
         
-        let detectedProtocol = { header: [0xfe, 0xfe], version: 'NEW_V1' };
+        let detectedProtocol = { 
+          sendHeader: [0xfe, 0xfe], 
+          receiveHeader: [0xfe, 0xfe], 
+          version: 'NEW_V1' 
+        };
         
         // 处理接收到的数据
         async function handleRxdNotifications(event) {
@@ -309,7 +326,9 @@
             const protocol = detectProtocolHeader(data);
             if (protocol.version !== 'UNKNOWN') {
               detectedProtocol = protocol;
-              console.log(`🔍 检测到协议版本: ${protocol.version}, 协议头: [${protocol.header.map(b => '0x' + b.toString(16)).join(', ')}]`);
+              console.log(`🔍 检测到协议: ${protocol.version}`);
+              console.log(`  接收协议头: [${protocol.receiveHeader.map(b => '0x' + b.toString(16)).join(', ')}]`);
+              console.log(`  发送协议头: [${protocol.sendHeader.map(b => '0x' + b.toString(16)).join(', ')}]`);
             }
             
             // 简化的协议处理
@@ -325,13 +344,13 @@
                     const deviceName = bluetoothDevice.name || "WaterController";
                     const nameBytes = new TextEncoder().encode(deviceName);
                     
-                    // 构建响应包，使用检测到的协议头
+                    // 构建响应包，使用发送协议头
                     const packet = new Uint8Array([
-                      ...detectedProtocol.header,  // 0xfd,0xfd 或 0xfe,0xfe
-                      0x09,                        // 长度
-                      0xb1,                        // 响应类型
-                      0x01,                        // 状态
-                      ...nameBytes.slice(0, 10)    // 设备名称（限制长度）
+                      ...detectedProtocol.sendHeader,  // 发送用FE
+                      0x09,                            // 长度
+                      0xb1,                            // 响应类型
+                      0x01,                            // 状态
+                      ...nameBytes.slice(0, 10)        // 设备名称（限制长度）
                     ]);
                     
                     console.log("📤 发送握手响应:", Array.from(packet).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -386,12 +405,12 @@
                     // 🔍 计算CRC16校验和 (使用原项目的crc16cgaeaf算法)
                     const checksum = calculateCRC16CGAEAF(checksumInput);
                     
-                    // 🚀 发送最终响应包
+                    // 🚀 发送最终响应包 (关键修复：使用FE协议头)
                     const responsePacket = new Uint8Array([
-                      ...detectedProtocol.header,  // 0xfd, 0xfd
-                      0x09, 0xaf,                  // 响应类型
-                      checksum,                    // 1字节校验和
-                      ...checksumInput            // 15字节数据
+                      ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe
+                      0x09, 0xaf,                      // 响应类型
+                      checksum,                        // 1字节校验和
+                      ...checksumInput                // 15字节数据
                     ]);
                     
                     console.log("📤 发送密钥交换响应:", Array.from(responsePacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -435,12 +454,12 @@
                       const datetime = getCurrentDateTimeArray();
                       
                       const startEpiloguePacket = new Uint8Array([
-                        ...detectedProtocol.header,  // 0xfd, 0xfd
-                        0x09, 0xb2, 0x01,           // startEpilogue指令
+                        ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe
+                        0x09, 0xb2, 0x01,               // startEpilogue指令
                         checksum & 0xFF, checksum >> 8, 0x0b, 0x00,  // 校验和 + 新固件标志
-                        ...randomId,                 // 随机用户ID  
-                        ...datetime,                 // 当前时间
-                        0x0f, 0x27, 0x00           // 固定尾部
+                        ...randomId,                     // 随机用户ID  
+                        ...datetime,                     // 当前时间
+                        0x0f, 0x27, 0x00               // 固定尾部
                       ]);
                       
                       console.log("📤 发送startEpilogue启动包:", Array.from(startEpiloguePacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -509,10 +528,10 @@
             await rxdCharacteristic.startNotifications();
             rxdCharacteristic.addEventListener("characteristicvaluechanged", handleRxdNotifications);
 
-            // 直接使用 NEW_V2 协议 (0xfd 0xfd) - 根据用户设备检测结果
-            console.log("📤 发送初始握手包 (NEW_V2协议)...");
-            detectedProtocol = { header: [0xfd, 0xfd], version: 'NEW_V2' };  // 预设为NEW_V2
-            const startPacket = new Uint8Array([0xfd, 0xfd, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
+            // 🔥 关键修复：使用0xFE协议头发送，设备会用0xFD回复
+            console.log("📤 发送初始握手包 (使用0xFE协议头)...");
+            detectedProtocol = { header: [0xfe, 0xfe], version: 'MIXED' };  // 发送FE，接收FD
+            const startPacket = new Uint8Array([0xfe, 0xfe, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
             console.log("📤 发送数据:", Array.from(startPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
             await txdCharacteristic.writeValue(startPacket);
             
@@ -529,9 +548,9 @@
         // 结束连接
         async function endBluetooth() {
           try {
-            // 使用检测到的协议头发送结束包
+            // 使用发送协议头发送结束包
             const endPacket = new Uint8Array([
-              ...detectedProtocol.header,  // 使用检测到的协议头
+              ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe
               0x09, 0xb3, 0x00, 0x00
             ]);
             console.log("📤 发送结束包:", Array.from(endPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -569,12 +588,12 @@
                 const datetime = getCurrentDateTimeArray();
                 
                 controlPacket = new Uint8Array([
-                  ...detectedProtocol.header,  // 0xfd, 0xfd  
-                  0x09, 0xb2, 0x01,           // 启动指令
+                  ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe  
+                  0x09, 0xb2, 0x01,               // 启动指令
                   checksum & 0xFF, checksum >> 8, 0x0b, 0x00,  // 校验和和新固件标志
-                  ...randomId,                 // 随机用户ID (BCD格式)
-                  ...datetime,                 // 当前时间 (6字节)
-                  0x0f, 0x27, 0x00           // 固定尾部
+                  ...randomId,                     // 随机用户ID (BCD格式)
+                  ...datetime,                     // 当前时间 (6字节)
+                  0x0f, 0x27, 0x00               // 固定尾部
                 ]);
                 
                 console.log("🚰 发送启动出水指令:", Array.from(controlPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -586,10 +605,10 @@
                 const amountLow = amount & 0xFF;
                 
                 controlPacket = new Uint8Array([
-                  ...detectedProtocol.header,  // 0xfd, 0xfd
-                  0x09, 0xc5,                  // 水量设置指令
-                  amountHigh, amountLow,       // 水量(毫升)
-                  0x01, 0x00, 0x00, 0x00      // 控制标志
+                  ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe
+                  0x09, 0xc5,                      // 水量设置指令
+                  amountHigh, amountLow,           // 水量(毫升)
+                  0x01, 0x00, 0x00, 0x00          // 控制标志
                 ]);
                 
                 console.log(`💧 设置出水量 ${amount}ml:`, Array.from(controlPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -598,8 +617,8 @@
               case 'stop_flow':
                 // 🛑 停止出水指令
                 controlPacket = new Uint8Array([
-                  ...detectedProtocol.header,  // 0xfd, 0xfd
-                  0x09, 0xb3, 0x00, 0x00      // 停止指令
+                  ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe
+                  0x09, 0xb3, 0x00, 0x00          // 停止指令
                 ]);
                 
                 console.log("🛑 发送停止出水指令:", Array.from(controlPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
@@ -608,10 +627,10 @@
               case 'unlimited_mode':
                 // ♾️ 无限模式 - 发送超大数值绕过限制
                 controlPacket = new Uint8Array([
-                  ...detectedProtocol.header,  // 0xfd, 0xfd
-                  0x09, 0xc5,                  // 水量设置指令  
-                  0xFF, 0xFF,                  // 最大水量 (65535ml)
-                  0xFF, 0xFF, 0xFF, 0xFF      // 特殊控制标志
+                  ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe
+                  0x09, 0xc5,                      // 水量设置指令  
+                  0xFF, 0xFF,                      // 最大水量 (65535ml)
+                  0xFF, 0xFF, 0xFF, 0xFF          // 特殊控制标志
                 ]);
                 
                 console.log("♾️ 激活无限出水模式:", Array.from(controlPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
