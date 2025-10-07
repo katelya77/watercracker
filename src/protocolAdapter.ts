@@ -23,7 +23,9 @@ export function detectFirmwareVersion(payload: Uint8Array): string {
   if (payload.includes(0x98) && payload.includes(0x04)) {
     return "NEW_V2";
   }
-  if (payload.includes(0x7A) || payload.includes(0x8E)) {
+  // NEW_V1的特征：包含0x7A或0x8E，或者是0xb0/0xae/0xaf握手序列
+  if (payload.includes(0x7A) || payload.includes(0x8E) || 
+      payload.includes(0xb0) || payload.includes(0xae) || payload.includes(0xaf)) {
     return "NEW_V1";
   }
   return "LEGACY";
@@ -90,6 +92,15 @@ export class ProtocolAdapter {
     log(`处理V1协议 - dType: 0x${dType.toString(16)}`);
 
     switch (dType) {
+      case 0xb0: // 初始握手
+        log("忽略0xb0握手包，由原有逻辑处理");
+        return false; // 让原有逻辑处理
+      case 0xae: // 密钥请求
+        log("忽略0xae密钥包，由原有逻辑处理");
+        return false; // 让原有逻辑处理
+      case 0xaf: // 认证响应
+        log("忽略0xaf认证包，由原有逻辑处理");
+        return false; // 让原有逻辑处理
       case 0x7A:
         return await this.handleNewAuthStep(payload, txdCharacteristic);
       case 0x8E:
