@@ -155,6 +155,10 @@
           <button onclick="quickWaterAmount(2000)" style="padding: 8px 12px; background: linear-gradient(45deg, #2196F3, #1976D2); color: white; border: none; border-radius: 8px; font-size: 12px; cursor: pointer;">2L</button>
         </div>
         
+        <div style="margin: 15px 0; text-align: center;">
+          <button onclick="resetDevice()" style="width: 100%; padding: 12px; background: linear-gradient(45deg, #f44336, #d32f2f); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;">🔄 重置设备</button>
+        </div>
+        
         <div style="margin: 15px 0;">
           <button onclick="fixErr39Error()" style="width: 100%; padding: 12px; background: linear-gradient(45deg, #4CAF50, #45a049); color: white; border: none; border-radius: 10px; font-size: 14px; font-weight: bold; cursor: pointer;">� PASS状态破解</button>
         </div>
@@ -1093,12 +1097,14 @@
             setTimeout(() => {
               console.log("✅ 界面激活完成，现在可以尝试控制水量了！");
               
-              // 自动尝试激活无限模式
+              // 🚫 禁用自动攻击 - 让用户手动控制
               setTimeout(() => {
-                console.log("♾️ 自动尝试激活无限模式...");
-                if (window.activateUnlimitedMode) {
-                  window.activateUnlimitedMode();
-                }
+                console.log("⚠️ 自动攻击已禁用，请手动选择破解方式");
+                updateWaterStatus("⚠️ 界面已激活 - 请手动选择破解按钮");
+                // 注释掉自动攻击，避免触发设备保护
+                // if (window.activateUnlimitedMode) {
+                //   window.activateUnlimitedMode();
+                // }
               }, 1000);
               
             }, 1000);
@@ -1414,9 +1420,50 @@
           }
         };
         
-        // 🔥 全局暴露函数
+        // � 设备重置功能
+        async function resetDevice() {
+          console.log("🔄 启动设备重置程序！");
+          updateWaterStatus("🔄 正在重置设备状态...");
+          
+          try {
+            const resetCommands = [
+              // 软重置指令
+              [0xfe, 0xfe, 0x09, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00],
+              [0xfd, 0xfd, 0x09, 0x00, 0xff, 0x00, 0x00, 0x00, 0x00, 0x00],
+              // 清除状态
+              [0xfe, 0xfe, 0x09, 0x66, 0x39, 0x00, 0x00, 0x7a, 0x00, 0x00],
+              // 恢复配对模式
+              [0xfd, 0xfd, 0x09, 0x55, 0x50, 0x41, 0x53, 0x53, 0x00, 0x01]
+            ];
+            
+            for (let i = 0; i < resetCommands.length; i++) {
+              const cmd = resetCommands[i];
+              console.log(`🔄 重置指令 ${i+1}:`, Array.from(cmd).map(b => '0x' + b.toString(16)).join(' '));
+              
+              try {
+                if (txdCharacteristic) {
+                  await txdCharacteristic.writeValue(new Uint8Array(cmd));
+                  console.log(`✅ 重置指令${i+1}发送成功`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 800));
+              } catch (err) {
+                console.log(`❌ 指令${i+1}失败:`, err.message);
+              }
+            }
+            
+            updateWaterStatus("🔄 设备重置完成！请重新连接");
+            alert("🔄 设备重置完成！\n\n请断开连接，等待设备恢复-PASS显示，\n然后重新连接并谨慎使用破解功能。");
+            
+          } catch (error) {
+            console.error("❌ 设备重置失败:", error);
+            updateWaterStatus("❌ 重置失败");
+          }
+        }
+
+        // �🔥 全局暴露函数
         window.startWaterController = handleButtonClick;
         window.fixErr39Error = fixErr39Error;
+        window.resetDevice = resetDevice;
         
         console.log("✅ 蓝牙功能已准备就绪");
         console.log("✅ 所有修复函数已加载");
