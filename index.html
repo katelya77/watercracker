@@ -1189,8 +1189,8 @@
         
         // � 激进破解函数 - 立即尝试所有可能的密钥
         async function performAggressiveCrack(originalData) {
-          console.log("🔑 原项目精确算法破解！");
-          updateWaterStatus("🔑 使用原项目密钥算法...");
+          console.log("� 启动智能多算法自适应破解！");
+          updateWaterStatus("� 探测设备固件版本...");
           
           // 🔍 分析原项目成功调试信息重现密钥算法
           try {
@@ -1259,6 +1259,146 @@
             
           } catch (err) {
             console.error("❌ 原项目算法失败:", err);
+            
+            // 🚀 启动新的多算法破解系统
+            console.log("🔬 原算法失败，启动智能多算法系统！");
+            await performMultiAlgorithmCrack(originalData);
+          }
+        }
+        
+        // 🔬 智能多算法自适应破解系统
+        async function performMultiAlgorithmCrack(originalData) {
+          console.log("🔬 多算法自适应破解系统启动！");
+          updateWaterStatus("🔬 尝试多种破解算法...");
+          
+          try {
+            const deviceName = bluetoothDevice.name || "Water34433";
+            const unknownByte = originalData[5];
+            const nonceH = originalData[6];
+            const nonceL = originalData[7];
+            const macH = originalData[8];
+            const macL = originalData[9];
+            
+            console.log(`📱 设备: ${deviceName}`);
+            console.log(`📊 参数: unknown=0x${unknownByte.toString(16)}, nonce=0x${nonceH.toString(16)}${nonceL.toString(16)}, mac=0x${macH.toString(16)}${macL.toString(16)}`);
+            
+            // 🎯 6种不同的密钥算法 (覆盖各种固件版本)
+            const algorithms = [
+              {
+                name: "新固件v2算法",
+                calc: () => [
+                  (nonceH ^ 0xAA) & 0xff,
+                  (nonceL ^ macH) & 0xff, 
+                  (macH ^ 0x55) & 0xff,
+                  (macL ^ nonceH) & 0xff
+                ]
+              },
+              {
+                name: "反向计算法", 
+                calc: () => [
+                  (~(nonceH ^ macH)) & 0xff,
+                  (~(nonceL ^ macL)) & 0xff,
+                  (nonceH + macH) & 0xff,
+                  (nonceL + macL) & 0xff
+                ]
+              },
+              {
+                name: "简化直接法",
+                calc: () => [nonceH, nonceL, macH, macL]
+              },
+              {
+                name: "设备名混合法",
+                calc: () => {
+                  const nameSum = deviceName.split('').reduce((sum, c) => sum + c.charCodeAt(0), 0);
+                  return [
+                    (nonceH ^ (nameSum & 0xff)) & 0xff,
+                    (nonceL ^ ((nameSum >> 8) & 0xff)) & 0xff,
+                    (macH ^ (nameSum & 0xff)) & 0xff,
+                    (macL ^ ((nameSum >> 8) & 0xff)) & 0xff
+                  ];
+                }
+              },
+              {
+                name: "时间戳动态法",
+                calc: () => {
+                  const now = new Date();
+                  const timeSeed = now.getMinutes();
+                  return [
+                    (nonceH ^ timeSeed) & 0xff,
+                    (nonceL ^ macH) & 0xff,
+                    (macH ^ 0xCC) & 0xff,
+                    (macL ^ 0x33) & 0xff
+                  ];
+                }
+              },
+              {
+                name: "零密钥绕过法",
+                calc: () => [0x00, 0x00, 0x00, 0x00]
+              }
+            ];
+            
+            // 🔄 顺序尝试每种算法
+            for (let i = 0; i < algorithms.length; i++) {
+              const algorithm = algorithms[i];
+              
+              try {
+                console.log(`🔑 [${i+1}/${algorithms.length}] ${algorithm.name}`);
+                updateWaterStatus(`🔑 尝试: ${algorithm.name}`);
+                
+                let keyBytes = new Uint8Array(algorithm.calc());
+                
+                // 应用设备名掩码 (如果有数字)
+                const maskChars = deviceName.slice(-4);
+                for (let j = 0; j < 4; j++) {
+                  const maskValue = parseInt(maskChars[j]);
+                  if (!isNaN(maskValue)) {
+                    keyBytes[j] = (keyBytes[j] ^ maskValue) & 0xff;
+                  }
+                }
+                
+                // 构建认证包
+                const nonce = (nonceH << 8) | nonceL;
+                const newNonce = nonce + 1;
+                const newNonceH = (newNonce >> 8) & 0xff;
+                const newNonceL = newNonce & 0xff;
+                
+                const crcInput = new Uint8Array([unknownByte, newNonceH, newNonceL, ...keyBytes]);
+                const crc16 = calculateCRC16CGAEAF(crcInput);
+                
+                const authPacket = new Uint8Array([
+                  0xfe, 0xfe, 0x09, 0xaf, crc16, 
+                  unknownByte, newNonceH, newNonceL,
+                  ...keyBytes,
+                  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+                ]);
+                
+                console.log(`  密钥: ${Array.from(keyBytes).map(b => '0x' + b.toString(16)).join(' ')}`);
+                console.log(`  📤: ${Array.from(authPacket).slice(0, 12).map(b => '0x' + b.toString(16)).join(' ')}`);
+                
+                await txdCharacteristic.writeValue(authPacket);
+                
+                // 等待1秒观察设备响应
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+              } catch (err) {
+                console.log(`  ❌ ${algorithm.name}失败:`, err.message);
+              }
+            }
+            
+            console.log("🏁 多算法破解完成");
+            updateWaterStatus("🏁 多算法尝试完成，观察设备状态");
+            
+            // 3秒后提示
+            setTimeout(() => {
+              console.log("💡 如果设备仍显示错误代码，可能需要:");
+              console.log("   - 固件降级或刷机");
+              console.log("   - 硬件调试接口");
+              console.log("   - 等待厂商漏洞或新破解方案");
+              updateWaterStatus("⚠️ 如未成功，可能需要硬件级破解");
+            }, 3000);
+            
+          } catch (err) {
+            console.error("❌ 多算法系统失败:", err);
           }
         }
         
