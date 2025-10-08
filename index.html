@@ -730,7 +730,7 @@
                   setTimeout(async () => {
                     try {
                       const successPacket = new Uint8Array([
-                        ...detectedProtocol.header,  // 0xfd, 0xfd
+                        ...detectedProtocol.sendHeader,  // 修复：使用正确的sendHeader
                         0x09, 0xb2, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
                       ]);
                       
@@ -795,6 +795,15 @@
                 console.log("⏹️ 收到结束响应");
                 updateUi("standby");
                 bluetoothDevice.gatt.disconnect();
+                break;
+                
+              case 0xb8: // 184 - 设备最终确认包
+                console.log("✅ 收到设备最终确认包，破解成功完成！");
+                console.log("🎉 水控器已成功激活，请查看设备显示屏确认余额！");
+                clearTimeout(timeoutId);
+                updateWaterStatus("🎉 破解成功！设备已激活！请查看显示屏确认");
+                isStarted = true;
+                updateUi("ok");
                 break;
                 
               default:
