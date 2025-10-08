@@ -834,7 +834,7 @@
             // 🔥 关键修复：使用0xFE协议头发送，设备会用0xFD回复
             console.log("📤 发送初始握手包 (使用0xFE协议头)...");
             connectionState = 'HANDSHAKE_SENT'; // 更新状态
-            const startPacket = new Uint8Array([0xfe, 0xfe, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
+            const startPacket = new Uint8Array([...detectedProtocol.sendHeader, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
             console.log("📤 发送数据:", Array.from(startPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
             await txdCharacteristic.writeValue(startPacket);
             
