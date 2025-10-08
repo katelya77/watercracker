@@ -820,6 +820,9 @@
 
             updateUi("pending");
 
+            // 更新连接状态机
+            connectionState = 'CONNECTING';
+
             const server = await bluetoothDevice.gatt.connect();
             const service = await server.getPrimaryService(0xf1f0);
             txdCharacteristic = await service.getCharacteristic(0xf1f1);
@@ -830,7 +833,7 @@
 
             // 🔥 关键修复：使用0xFE协议头发送，设备会用0xFD回复
             console.log("📤 发送初始握手包 (使用0xFE协议头)...");
-            detectedProtocol = { header: [0xfe, 0xfe], version: 'MIXED' };  // 发送FE，接收FD
+            connectionState = 'HANDSHAKE_SENT'; // 更新状态
             const startPacket = new Uint8Array([0xfe, 0xfe, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
             console.log("📤 发送数据:", Array.from(startPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
             await txdCharacteristic.writeValue(startPacket);
@@ -999,9 +1002,9 @@
           const key3 = calculateKeyAlgorithm3(input);
           
           console.log("🔑 多重密钥结果:");
-          console.log("  算法1:", Array.from(key1).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-          console.log("  算法2:", Array.from(key2).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-          console.log("  算法3:", Array.from(key3).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+          console.log("  算法1:", Array.from(key1).map(b => '0x' + b.toString(16)).join(' '));
+          console.log("  算法2:", Array.from(key2).map(b => '0x' + b.toString(16)).join(' '));
+          console.log("  算法3:", Array.from(key3).map(b => '0x' + b.toString(16)).join(' '));
           
           // 返回第一个算法的结果，但稍后会尝试所有算法
           return key1;
