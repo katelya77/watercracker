@@ -719,78 +719,9 @@
                 if (statusCode === 0x39) {
                   console.log("❌ 密钥验证失败 - 需要正确的密钥算法");
                   updateWaterStatus("❌ 密钥验证失败");
+                  // 不再尝试任何强制激活或伪造包，直接终止流程
                   return;
                 }
-                
-                /* 禁用强制绕过逻辑
-                if (statusCode === 0x39) {
-                  console.log("🔥 密钥验证失败 - 启动直接绕过模式！");
-                  console.log("� 忽略密钥验证，直接强制启动水控器！");
-                  
-                  updateWaterStatus("🔥 绕过验证中，直接激活...");
-                  
-                  // 不断开连接！直接发送强制启动命令
-                  setTimeout(async () => {
-                    try {
-                      console.log("⚡ 执行强制启动序列...");
-                      
-                      // 直接发送 startEpilogue 启动包，绕过密钥验证
-                      const deviceName = bluetoothDevice.name || "Water34433";
-                      const checksum = 0x6d; // 使用固定校验和
-                      
-                      // 生成随机用户ID
-                      const randomIdNumber = 9999;
-                      const randomId = [0x27, 0x0f]; // 固定ID确保成功
-                      
-                      // 当前时间
-                      const now = new Date();
-                      const datetime = [
-                        now.getSeconds(),
-                        now.getMinutes(), 
-                        now.getHours(),
-                        now.getDate(),
-                        now.getMonth() + 1,
-                        now.getFullYear() - 2000
-                      ];
-                      
-                      // 构建强制启动包
-                      const forceStartPacket = new Uint8Array([
-                        0xfe, 0xfe,                     // 发送协议头
-                        0x09, 0xb2, 0x01,               // startEpilogue指令
-                        checksum, 0x00, 0x0b, 0x00,     // 校验和 + 标志
-                        ...randomId,                     // 用户ID  
-                        ...datetime,                     // 时间
-                        0x0f, 0x27, 0x00               // 魔法尾部
-                      ]);
-                      
-                      console.log("📤 发送强制启动包:", Array.from(forceStartPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-                      await txdCharacteristic.writeValue(forceStartPacket);
-                      
-                      // 再发送999.99L无限水量激活包
-                      await new Promise(resolve => setTimeout(resolve, 1000));
-                      
-                      const unlimitedPacket = new Uint8Array([
-                        0xfe, 0xfe, 0x09, 0xb2, 0x01, 
-                        0xff, 0xff, 0xff, 0xff,        // 999.99L 表示
-                        0x99, 0x99, 0x99, 0x99,
-                        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
-                      ]);
-                      
-                      console.log("💧 发送999.99L无限水量包...");
-                      await txdCharacteristic.writeValue(unlimitedPacket);
-                      
-                      updateWaterStatus("🎉 强制破解成功！999.99L已激活！");
-                      isStarted = true;
-                      updateUi("ok");
-                      
-                    } catch (err) {
-                      console.error("❌ 强制启动失败:", err);
-                      updateWaterStatus("❌ 强制破解失败");
-                    }
-                  }, 500);
-                  return; // 不继续正常流程
-                }
-                */
                 
                 // 正常成功流程
                 if (data.length > 4 && data[4] === 0x7a) {
@@ -1180,10 +1111,8 @@
             console.error("❌ 协议欺骗失败:", err);
             
             // 即使欺骗失败，也要强制激活界面
-            console.log("🔥 欺骗失败，但仍然强制激活界面");
-            isStarted = true;
-            updateUi("ok");
-            updateWaterStatus("⚠️ 强制激活模式：请手动尝试控制");
+            console.log("❌ 协议欺骗失败，未能激活设备");
+            updateWaterStatus("❌ 协议欺骗失败，设备未激活");
           }
         }
         
