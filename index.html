@@ -561,12 +561,16 @@
           
           console.log("✅ 处理完整数据包:", Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
           
-          // � 激进破解模式：收到任何包含0xae的数据就立即暴力破解
-          if (data.includes(0xae)) {
+          // 严格时序控制：先处理握手，再处理密钥交换
+          if (data.includes(0xae) && connectionState === 'HANDSHAKE_COMPLETE') {
             console.log("🔑 检测到密钥交换请求，使用原项目精确算法！");
-            setTimeout(async () => {
-              await performAggressiveCrack(data);
-            }, 200);
+            connectionState = 'AUTH_SENT';
+            console.log(`🔄 连接状态更新为: ${connectionState}`);
+            // 立即处理，不延时
+            await performAggressiveCrack(data);
+            return;
+          } else if (data.includes(0xae) && connectionState !== 'HANDSHAKE_COMPLETE') {
+            console.log(`🚫 时序错误：收到密钥交换但握手未完成，当前状态: ${connectionState}`);
             return;
           }
           
@@ -592,28 +596,34 @@
             switch (data[3]) {
               case 0xb0: // 176 - 握手请求
               case 0xb1: // 177 - 握手响应
-                console.log("🤝 收到握手包，准备响应...");
-                setTimeout(async () => {
-                  try {
-                    // 使用检测到的协议头
-                    const deviceName = bluetoothDevice.name || "WaterController";
-                    const nameBytes = new TextEncoder().encode(deviceName);
-                    
-                    // 构建响应包，使用发送协议头
-                    const packet = new Uint8Array([
-                      ...detectedProtocol.sendHeader,  // 发送用FE
-                      0x09,                            // 长度
-                      0xb1,                            // 响应类型
-                      0x01,                            // 状态
-                      ...nameBytes.slice(0, 10)        // 设备名称（限制长度）
-                    ]);
-                    
-                    console.log("📤 发送握手响应:", Array.from(packet).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-                    await txdCharacteristic.writeValue(packet);
-                  } catch (err) {
-                    console.error("握手响应失败:", err);
-                  }
-                }, 500);
+                if (connectionState !== 'HANDSHAKE_SENT') {
+                  console.log(`🚫 时序错误：在状态 ${connectionState} 时收到握手响应，应为 HANDSHAKE_SENT`);
+                  return;
+                }
+                console.log("🤝 收到握手包，立即更新状态为握手完成...");
+                connectionState = 'HANDSHAKE_COMPLETE';
+                console.log(`🔄 连接状态更新为: ${connectionState}`);
+                
+                // 立即发送握手响应，不延迟
+                try {
+                  const deviceName = bluetoothDevice.name || "WaterController";
+                  const nameBytes = new TextEncoder().encode(deviceName);
+                  
+                  // 构建响应包，使用发送协议头
+                  const packet = new Uint8Array([
+                    ...detectedProtocol.sendHeader,  // 发送用FE
+                    0x09,                            // 长度
+                    0xb1,                            // 响应类型
+                    0x01,                            // 状态
+                    ...nameBytes.slice(0, 10)        // 设备名称（限制长度）
+                  ]);
+                  
+                  console.log("📤 立即发送握手响应:", Array.from(packet).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                  await txdCharacteristic.writeValue(packet);
+                  console.log("✅ 握手响应发送成功，状态已更新为 HANDSHAKE_COMPLETE");
+                } catch (err) {
+                  console.error("握手响应失败:", err);
+                }
                 break;
                 
               case 0xae: // 174 - 密钥交换请求 (关键！)
@@ -700,10 +710,15 @@
                 break;
                 
               case 0xaf: // 175 - 认证响应
+                if (connectionState !== 'AUTH_SENT') {
+                  console.log(`🚫 时序错误：在状态 ${connectionState} 时收到认证响应，应为 AUTH_SENT`);
+                  return;
+                }
                 console.log("🔒 收到认证包，完整数据:", Array.from(data).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
                 console.log("🔍 状态码分析:");
                 console.log("  位置4 (状态码):", data[4] ? '0x' + data[4].toString(16) : '无');
                 console.log("  位置5:", data[5] ? '0x' + data[5].toString(16) : '无');
+                connectionState = 'AUTH_COMPLETE';
                 
                 // 🔥 创新解决方案：分析所有可能的认证状态
                 const statusCode = data[4];
@@ -843,6 +858,7 @@
             // 🔥 关键修复：使用0xFE协议头发送，设备会用0xFD回复
             console.log("📤 发送初始握手包 (使用0xFE协议头)...");
             connectionState = 'HANDSHAKE_SENT'; // 更新状态
+            console.log(`🔄 连接状态更新为: ${connectionState}`);
             const startPacket = new Uint8Array([...detectedProtocol.sendHeader, 0x09, 0xb0, 0x01, 0x01, 0x00, 0x00]);
             console.log("📤 发送数据:", Array.from(startPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
             await txdCharacteristic.writeValue(startPacket);
